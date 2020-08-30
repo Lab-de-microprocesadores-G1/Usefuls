@@ -33,14 +33,14 @@ static void delayLoop(uint32_t veces);
 /* Función que se llama 1 vez, al comienzo del programa */
 void App_Init (void)
 {
-    gpioMode(PIN_LED_BLUE, OUTPUT);
+    gpioMode(PIN_LED_RED, OUTPUT);
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run (void)
 {
     delayLoop(4000000UL);
-    gpioToggle(PIN_LED_BLUE);
+    gpioToggle(PIN_LED_RED);
 }
 
 
