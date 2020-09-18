@@ -5,12 +5,12 @@
 
 __ISR__ SysTick_Handler(void);
 
-void (*handler)(void);
+void (*driver)(void);
 
 bool SysTick_Init (void (*funcallback)(void))
 {
 	uint32_t ticks = CPU_FREQUENCY_HZ / SYSTICK_ISR_FREQUENCY_HZ;
-	handler = funcallback;
+	driver = funcallback;
 	SysTick->CTRL = 0x00;
 	NVIC_EnableIRQ(SysTick_IRQn);
 	return (bool)SysTick_Config(ticks);
@@ -18,5 +18,8 @@ bool SysTick_Init (void (*funcallback)(void))
 
 __ISR__ SysTick_Handler(void)
 {
-	handler();
+	if (driver)
+ 	{
+		driver();
+	}
 }

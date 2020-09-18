@@ -146,18 +146,22 @@ void PORTA_IRQHandler(void)
 {
 	portHandler(PA);
 }
+
 void PORTB_IRQHandler(void)
 {
 	portHandler(PB);
 }
+
 void PORTC_IRQHandler(void)
 {
 	portHandler(PC);
 }
+
 void PORTD_IRQHandler(void)
 {
 	portHandler(PD);
 }
+
 void PORTE_IRQHandler(void)
 {
 	portHandler(PE);
