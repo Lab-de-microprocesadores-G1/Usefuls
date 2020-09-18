@@ -1,15 +1,14 @@
 /***************************************************************************//**
   @file     App.c
   @brief    Application functions
-  @author   Nicolás Magliola, Facundo Farall
+  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 /* Include drivers */
-// #include "drivers/"
-// #include "board/"
+// #include "drivers/HAL/timer/timer.h"
 
 
 /*******************************************************************************

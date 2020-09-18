@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     gpio.c
   @brief    Simple GPIO Pin services, similar to Arduino
-  @author   Micro Issant
+  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 #include "gpio.h"
