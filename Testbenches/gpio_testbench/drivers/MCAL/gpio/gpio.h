@@ -30,15 +30,15 @@ enum { PA, PB, PC, PD, PE };
 
 // Modes of configuration for each pin, optional settings can be appendeable 
 // using INPUT | PULLDOWN | LOCK, for example...
-#define INPUT             0x001
-#define OUTPUT            0x002
+#define INPUT             		0x001
+#define OUTPUT            		0x002
 #define PULLDOWN			    0x004
 #define PULLUP				    0x008
 #define SLEWRATE 			    0x010
 #define OPENDRAIN			    0x020
-#define LOCK				      0x040
+#define LOCK				    0x040
 #define FILTER				    0x080
-#define DRIVESTRENGTH		  0x100
+#define DRIVESTRENGTH		  	0x100
 
 // Backwards Compatibility
 #define INPUT_PULLUP        ( INPUT | PULLUP )
