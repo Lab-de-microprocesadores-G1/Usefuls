@@ -48,7 +48,7 @@ typedef void (*tim_callback_t)(void);
  ******************************************************************************/
 
 /**
- * @brief Initialize timer and corresponding peripheral
+ * @brief Initialise timer and corresponding peripheral
  */
 void timerInit(void);
 
