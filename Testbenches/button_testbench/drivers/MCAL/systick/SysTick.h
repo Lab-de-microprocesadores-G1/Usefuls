@@ -1,50 +1,46 @@
 /***************************************************************************//**
-  @file     board.h
-  @brief    Board management
-  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
+  @file     SysTick.h
+  @brief    SysTick driver
+  @author   Nicolas Magliola
  ******************************************************************************/
 
-#ifndef _BOARD_H_
-#define _BOARD_H_
+#ifndef _SYSTICK_H_
+#define _SYSTICK_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
-#include "../drivers/MCAL/gpio/gpio.h"
 
+#include <stdbool.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-/***** BOARD defines **********************************************************/
+#define SYSTICK_ISR_FREQUENCY_HZ   1000U
+#define CPU_FREQUENCY_HZ           100000000UL
 
-// On Board User LEDs
-#define PIN_LED_RED     PORTNUM2PIN(PB, 22) // PTB22
-#define PIN_LED_GREEN   PORTNUM2PIN(PE, 26) // PTE26
-#define PIN_LED_BLUE    PORTNUM2PIN(PB, 21) // PTB21
+/*******************************************************************************
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
+ ******************************************************************************/
 
-// On Board User Switches
-#define PIN_SW2         PORTNUM2PIN(PC, 6)  // PTC6
-#define PIN_SW3         PORTNUM2PIN(PA, 4)  // PTA4
-
-#define SW2_ACTIVE		LOW
-#define SW3_ACTIVE		LOW
-
-// Active Status
-#define LED_ACTIVE      LOW
-    
+/*******************************************************************************
+ * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
+ ******************************************************************************/
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
 /**
- * @brief Basic board initialization, default settings
+ * @brief Initialize SysTic driver
+ * @param funcallback Function to be call every SysTick
+ * @return Initialization and registration succeed
  */
-void boardInit(void);
+bool SysTick_Init (void (*funcallback)(void));
+
 
 /*******************************************************************************
  ******************************************************************************/
 
-#endif // _BOARD_H_
+#endif // _SYSTICK_H_

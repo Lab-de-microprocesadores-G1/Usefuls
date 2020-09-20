@@ -1,50 +1,44 @@
 /***************************************************************************//**
-  @file     board.h
-  @brief    Board management
-  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
+  @file     fsm.h
+  @brief    FSM Library
+  @author   Nicolás Trozzo
  ******************************************************************************/
 
-#ifndef _BOARD_H_
-#define _BOARD_H_
+#ifndef FSM_FSM_H_
+#define FSM_FSM_H
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
-#include "../drivers/MCAL/gpio/gpio.h"
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-/***** BOARD defines **********************************************************/
+typedef uint8_t fsmEvent_t;
 
-// On Board User LEDs
-#define PIN_LED_RED     PORTNUM2PIN(PB, 22) // PTB22
-#define PIN_LED_GREEN   PORTNUM2PIN(PE, 26) // PTE26
-#define PIN_LED_BLUE    PORTNUM2PIN(PB, 21) // PTB21
+typedef struct fsmState fsmState_t;
 
-// On Board User Switches
-#define PIN_SW2         PORTNUM2PIN(PC, 6)  // PTC6
-#define PIN_SW3         PORTNUM2PIN(PA, 4)  // PTA4
+typedef struct {
+	fsmEvent_t ev;
+	void (*action) (void);
+	fsmState_t nextState;
+} fsmTransition_t;
 
-#define SW2_ACTIVE		LOW
-#define SW3_ACTIVE		LOW
+typedef fsmState_t	(fsmTransition_t[]);
 
-// Active Status
-#define LED_ACTIVE      LOW
-    
+typedef fsmTable	fsmState_t[];
+
+/*******************************************************************************
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
+ ******************************************************************************/
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-/**
- * @brief Basic board initialization, default settings
- */
-void boardInit(void);
-
-/*******************************************************************************
- ******************************************************************************/
-
-#endif // _BOARD_H_
+#endif /* FSM_FSM_H_ */
