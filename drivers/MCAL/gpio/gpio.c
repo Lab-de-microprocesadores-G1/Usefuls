@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     gpio.c
   @brief    Simple GPIO Pin services, similar to Arduino
-  @author   Micro Issant
+  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 #include "gpio.h"
@@ -114,19 +114,24 @@ bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun)
 	PORT_Type* ports[] = PORT_BASE_PTRS;
 	IRQn_Type irqs[] = PORT_IRQS;
 
+	// PCR interruption mode configuration
 	ports[PIN2PORT(pin)]->PCR[PIN2NUM(pin)] |= PORT_PCR_IRQC(irqMode);
 	drivers[PIN2PORT(pin)][PIN2NUM(pin)] = irqFun;
 
+	// NVIC local enable for the interrupt
 	NVIC_EnableIRQ(irqs[PIN2PORT(pin)]);
 }
 
 void portHandler(uint8_t port)
 {
+	// Port pointer, back up interrupt status flag
 	PORT_Type* ports[] = PORT_BASE_PTRS;
 	uint32_t isfr = ports[port]->ISFR;
 
+	// Clear interrupt status flag for every pin in the port
 	ports[port]->ISFR = 0xFFFFFFFF;
 
+	// Verify which pin was interrupted, dispatches
 	uint8_t i = 0;
 	for (i = 0; i < 32 && isfr; i++)
 	{

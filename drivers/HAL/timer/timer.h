@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     timer.h
   @brief    Timer driver. Advance implementation
-  @author   Nicolás Magliola
+  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 #ifndef _TIMER_H_
