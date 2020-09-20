@@ -61,6 +61,7 @@ static void timer_isr(void);
 static timer_t timers[TIMERS_MAX_CANT];
 static tim_id_t timers_cant = TIMER_ID_INTERNAL+1;
 
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS

@@ -1,49 +1,46 @@
-/********************************************************************************
-  @file     App.c
-  @brief    Application functions
-  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
- *******************************************************************************/
+/***************************************************************************//**
+  @file     SysTick.h
+  @brief    SysTick driver
+  @author   Nicol�s Magliola
+ ******************************************************************************/
+
+#ifndef _SYSTICK_H_
+#define _SYSTICK_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <stdbool.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define SYSTICK_ISR_FREQUENCY_HZ   1000U
+#define CPU_FREQUENCY_HZ           100000000UL
 
 /*******************************************************************************
- * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-
 
 /*******************************************************************************
- *******************************************************************************
-                        GLOBAL FUNCTION DEFINITIONS
- *******************************************************************************
+ * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
-
-/* Called once at the beginning of the program */
-void App_Init (void)
-{
-    // Driver initialisations.
-}
-
-/* Called repeatedly in an infinit loop */
-void App_Run (void)
-{
-    // Things to do in an infinit loop.
-}
-
 
 /*******************************************************************************
- *******************************************************************************
-                        LOCAL FUNCTION DEFINITIONS
- *******************************************************************************
+ * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
+
+/**
+ * @brief Initialize SysTic driver
+ * @param funcallback Function to be call every SysTick
+ * @return Initialization and registration succeed
+ */
+bool SysTick_Init (void (*funcallback)(void));
 
 
 /*******************************************************************************
  ******************************************************************************/
+
+#endif // _SYSTICK_H_
