@@ -7,8 +7,6 @@
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
-
-#include <stdio.h>
 #include "board.h"
 
 
@@ -26,6 +24,6 @@
 void boardInit(void)
 {
   // By default, unable interrupts of the SW3
-  gpioMode(PIN_SW3, INPUT);
-  gpioIRQ(PIN_SW3, GPIO_IRQ_MODE_DISABLE, NULL);
+  gpioMode(PIN_Sw3, INPUT);
+  gpioIrq(PIN_SW3, GPIO_IRQ_MODE_DISABLE, null);
 }
