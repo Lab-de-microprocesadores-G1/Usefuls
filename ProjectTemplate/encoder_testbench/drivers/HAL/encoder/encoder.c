@@ -80,6 +80,8 @@ ENCODER_ISR_HANDLER_PROTOTYPE(0,B)
  ******************************************************************************/
 static encoder_t encodersList[ENCODER_COUNT] = {
   {ENCODER1_A_PIN, ENCODER1_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(0,A), ENCODER_ISR_HANDLER_NAME(0,B)}
+  //* To add a new encoder:
+  //* {ENCODERn_A_PIN, ENCODERn_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(n,A), ENCODER_ISR_HANDLER_NAME(n,B)}
 };
 
 
@@ -168,7 +170,7 @@ void initSingleEncoder(encoder_id_t id)
   gpioMode(encodersList[id].pinNumberA, INPUT);
   gpioMode(encodersList[id].pinNumberB, INPUT);
   gpioIRQ(encodersList[id].pinNumberA, GPIO_IRQ_MODE_INTERRUPT_BOTH_EDGES, encodersList[id].isrA);
-  gpioIRQ(encodersList[id].pinNumberB, GPIO_IRQ_MODE_INTERRUPT_BOTH_EDGES, encodersList[id].isrA);
+  gpioIRQ(encodersList[id].pinNumberB, GPIO_IRQ_MODE_INTERRUPT_BOTH_EDGES, encodersList[id].isrB);
 }
 
 static void FSMCycle(encoder_id_t id, encoder_signal_t signal)
