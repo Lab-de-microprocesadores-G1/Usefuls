@@ -1,13 +1,15 @@
 /***************************************************************************//**
   @file     fsm.c
   @brief    FSM Library
-  @author   Nicolás Trozzo
+  @author   G. Davidov, F. Farall, J. Gaytan, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
+
+#include "fsm.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -44,6 +46,24 @@
  *******************************************************************************
  ******************************************************************************/
 
+void fsmCycle(state_t* state, void* event)
+{
+	// Casting to the standard event handled
+	event_id_t newEvent = *(event_id_t*)event;
+
+	// Searching the edge with this event
+	state_t currentState = *state;
+	while (currentState->event != newEvent && currentState->event != END_OF_STATE)
+	{
+		currentState++;
+	}
+
+	// When found the edge or the end of state
+	currentState->action(event);
+
+	// Go to the next state
+	*state = currentState->nextState;
+}
 
 /*******************************************************************************
  *******************************************************************************
