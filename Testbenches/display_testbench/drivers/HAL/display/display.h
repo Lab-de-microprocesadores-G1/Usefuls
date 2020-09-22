@@ -1,17 +1,16 @@
 /***************************************************************************//**
-  @file     encoder.h
+  @file     display.h
   @brief    [...]
   @author   G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
-#ifndef HAL_ENCODER_ENCODER_H_
-#define HAL_ENCODER_ENCODER_H_
+#ifndef HAL_DISPLAY_DISPLAY_H_
+#define HAL_DISPLAY_DISPLAY_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 #include <stdbool.h>
-#include "../../MCAL/gpio/gpio.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -20,12 +19,14 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-typedef enum {
-	ENCODER_1,
-	ENCODER_COUNT
-} encoder_id_t;
+typedef enum uint8_t{
+	DISPLAY_1,
+    DISPLAY_2,
+    DISPLAY_3,
+    DISPLAY_4,
+    DISPLAY_COUNT
+} display_id_t;
 
-typedef void (*encoder_callback_t)(void);
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
@@ -35,46 +36,56 @@ typedef void (*encoder_callback_t)(void);
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 /**
- * @brief Initialise encoders driver and corresponding peripherals.
+ * @brief Initialise display driver and corresponding peripherals.
  */
-void encoderInit(void);
+void displayInit(void);
 
 // Non-Blocking services ////////////////////////////////////////////////
 
 /**
- * @brief Register both callbacks for encoder.
- * @param id of the encoder to use.
- * @param clockwiseCallback Function to call when encoder rotates one position in clockwise direction.
- * @param counterClockwiseCallback Function to call when encoder rotates one position in counter-clockwise direction.
+ * @brief Write character on display.
+ * @param id id of the display to write to.
+ * @param character character to write.
  */
-void registerCallbacks(encoder_id_t id, encoder_callback_t clockwiseCallback, encoder_callback_t counterClockwiseCallback);
+void displayWrite(display_id_t id, uint8_t chr);
 
 /**
- * @brief Register callback for encoder rotating clockwise.
- * @param id of the encoder to use.
- * @param clockwiseCallback Function to call when encoder rotates one position in clockwise direction.
+ * @brief Enable display.
+ * @param id id of the display.
  */
-void registerClockwiseCallback(encoder_id_t id, encoder_callback_t clockwiseCallback);
+void displayEnable(display_id_t id);
+
 
 /**
- * @brief Register callback for encoder rotating clockwise.
- * @param id of the encoder to use.
- * @param clockwiseCallback Function to call when encoder rotates one position in clockwise direction.
+ * @brief Disable display.
+ * @param id id of the display.
  */
-void registerCounterClockwiseCallback(encoder_id_t id, encoder_callback_t counterClockwiseCallback);
+void displayDisable(display_id_t id);
 
 /**
- * @brief Disable encoder.
- * @param id of the encoder to use.
+ * @brief Set display's brightness.
+ * @param id id of the display.
+ * @param brightness brightness level.
  */
-void disableEncoder(encoder_id_t id);
+void displaySetBrightness(display_id_t id, display_brightness_t brightness);
 
 /**
- * @brief Enable encoder.
- * @param id of the encoder to use.
+ * @brief Enable decimal point on display.
+ * @param id id of the display to write to.
  */
-void enableEncoder(encoder_id_t id);
+void displayDotSet(display_id_t id);
 
+/**
+ * @brief Disable decimal point on display.
+ * @param id id of the display to write to.
+ */
+void displayDotClear(display_id_t id);
+
+/**
+ * @brief Clears a display
+ * @param id id of the display.
+ */
+void displayClear(display_id_t id);
 /*******************************************************************************
  ******************************************************************************/
 

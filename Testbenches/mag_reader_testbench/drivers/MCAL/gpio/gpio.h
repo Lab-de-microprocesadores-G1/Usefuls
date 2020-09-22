@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
   @file     gpio.h
   @brief    Simple GPIO Pin services, similar to Arduino
   @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
@@ -13,14 +13,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "MK64F12.h"
-
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-// Ports
+// Ports declaration
 enum { PA, PB, PC, PD, PE };
 
 // Convert port and number into pin ID
@@ -30,37 +28,25 @@ enum { PA, PB, PC, PD, PE };
 #define PIN2PORT(p)         (((p)>>5) & 0x07)
 #define PIN2NUM(p)          ((p) & 0x1F)
 
-
-// Modes
-#ifndef INPUT
-
-#define TYPE_MASK			0x0080		// Unused bit on PCR
-#define GPIO_MASK			(1 << PORT_PCR_MUX_SHIFT)
-
-#define INPUT               0	// Use TYPE_MASK bit to tell whether we use it as INPUT or OUTPUT
-#define OUTPUT              TYPE_MASK
-#define PULLDOWN			PORT_PCR_PE_MASK
-#define PULLUP				( PORT_PCR_PE_MASK | PORT_PCR_PS_MASK )
-#define SLEWRATE 			PORT_PCR_SRE_MASK
-#define OPENDRAIN			PORT_PCR_ODE_MASK
-#define LOCK				PORT_PCR_LK_MASK
-#define FILTER				PORT_PCR_PFE_MASK
-#define DRIVESTRENGTH		PORT_PCR_DSE_MASK
+// Modes of configuration for each pin, optional settings can be appendeable 
+// using INPUT | PULLDOWN | LOCK, for example...
+#define INPUT             0x001
+#define OUTPUT            0x002
+#define PULLDOWN			    0x004
+#define PULLUP				    0x008
+#define SLEWRATE 			    0x010
+#define OPENDRAIN			    0x020
+#define LOCK				      0x040
+#define FILTER				    0x080
+#define DRIVESTRENGTH		  0x100
 
 // Backwards Compatibility
 #define INPUT_PULLUP        ( INPUT | PULLUP )
 #define INPUT_PULLDOWN      ( INPUT | PULLDOWN )
 
-#endif // INPUT
-
 // Digital values
-#ifndef LOW
 #define LOW     0
 #define HIGH    1
-#endif // LOW
-
-
-#define GPIO_IRQ_CANT_MODES 9
 
 // IRQ modes
 enum {
@@ -77,6 +63,8 @@ enum {
 	GPIO_IRQ_MODE_INTERRUPT_LOGIC_1,
 };
 
+#define GPIO_IRQ_CANT_MODES 9
+
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -85,7 +73,6 @@ enum {
 typedef uint8_t pin_t;
 
 typedef void (*pinIrqFun_t)(void);
-
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
