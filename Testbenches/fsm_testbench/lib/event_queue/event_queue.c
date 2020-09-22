@@ -15,16 +15,18 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define	MAX_EVENT_GENERATORS	15
+
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+
 typedef struct {
-	queue_t				queue;									// Queue to save events
-	event_generator_t	eventGenerators[MAX_EVENT_GENERATORS];	// Registered event generators
-	uint8_t				generatorsCount;						// Amount of registered event generators
+	queue_t				queue;									 // Queue to save events
+	event_generator_t	eventGenerators[MAX_EVENT_GENERATORS];	 // Registered event generators
+	bool				enabledGenerators[MAX_EVENT_GENERATORS]; // Generators can be ignored
+	uint8_t				generatorsCount;						 // Amount of registered event generators
 } event_queue_t;
 
 
@@ -62,17 +64,32 @@ event_queue_t createEventQueue(void* buffer, size_t queueSize, size_t elementSiz
 	return newQueue;
 }
 
-bool registerEventGenerator(event_queue_t* queue, event_generator_t generator)
+generator_id_t registerEventGenerator(event_queue_t* queue, event_generator_t generator)
 {
-	bool succeed = false;
+	generator_id_t id = OUT_OF_GENERATORS;
 
 	if (queue)
 	{
 		if (queue->generatorsCount < MAX_EVENT_GENERATORS)
 		{
-			queue->eventGenerators[queue->generatorsCount++] = generator;
-			succeed = true;
+			queue->eventGenerators[queue->generatorsCount] = generator;
+			queue->enabledGenerators[queue->generatorsCount] = true;
+			id = queue->generatorsCount++;
 		}
+	}
+
+	// Return the succeed status
+	return id;
+}
+
+bool setEnable(event_queue_t* queue, generator_id_t id, bool enable)
+{
+	bool succeed = false;
+
+	if (queue && id < queue->generatorsCount)
+	{
+		queue->enabledGenerators[id] = enable;
+		succeed = true;
 	}
 
 	// Return the succeed status
@@ -90,10 +107,14 @@ void* getNextEvent(event_queue_t* queue)
 		void* ev;
 		for ( i = 0 ; i < queue->generatorsCount ; i++ )
 		{
-			ev = queue->eventGenerators[i]();
-			if (ev != NO_EVENTS)
+			// If the generator is enabled
+			if (queue->enabledGenerators[i])
 			{
-				push(queue->queue, ev);
+				ev = queue->eventGenerators[i]();
+				if (ev != NO_EVENTS)
+				{
+					push(queue->queue, ev);
+				}
 			}
 		}
 		element = pop(queue->queue);
