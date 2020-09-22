@@ -21,7 +21,9 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 typedef enum {
-	ENCODER_1,
+	ENCODER_0,
+  //* To add a new encoder:
+  //* ENCODER_1
 	ENCODER_COUNT
 } encoder_id_t;
 

@@ -34,7 +34,7 @@ enum { PA, PB, PC, PD, PE };
 // Modes
 #ifndef INPUT
 
-#define TYPE_MASK			0x0080		// Unused bit on PCR
+#define TYPE_MASK			0x0080		// Unused bit in PCR
 #define GPIO_MASK			(1 << PORT_PCR_MUX_SHIFT)
 
 #define INPUT               0	// Use TYPE_MASK bit to tell whether we use it as INPUT or OUTPUT
