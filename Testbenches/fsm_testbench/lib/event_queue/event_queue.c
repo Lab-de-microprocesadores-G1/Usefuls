@@ -1,6 +1,6 @@
 /*******************************************************************************
-  @file     queue.c
-  @brief    Queue data structure handler
+  @file     event_queue.c
+  @brief    [...]
   @author   G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
@@ -9,26 +9,23 @@
  ******************************************************************************/
 
 #include <stdint.h>
-#include "queue.h"
-
+#include "../queue/queue.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define	MAX_EVENT_GENERATORS	15
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
 typedef struct {
-	uint32_t 	front;			// Next element to be out
-	uint32_t	rear;			// Last element that entered the queue
-	uint8_t*	buffer;			// Pointer to the array reserved in memory
-	size_t 		queueSize;		// Amount of elements in the array (fixed)
-	size_t		elementSize;	// Size in bytes of the element
-} queue_t;
-
+	queue_t				queue;									// Queue to save events
+	event_generator_t	eventGenerators[MAX_EVENT_GENERATORS];	// Registered event generators
+	uint8_t				generatorsCount;						// Amount of registered event generators
+} event_queue_t;
 
 
 /*******************************************************************************
@@ -38,6 +35,8 @@ typedef struct {
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
+
+
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -54,76 +53,53 @@ typedef struct {
  *******************************************************************************
  ******************************************************************************/
 
-queue_t createQueue(void* buffer, size_t queueSize, size_t elementSize)
+event_queue_t createEventQueue(void* buffer, size_t queueSize, size_t elementSize)
 {
-	queue_t queue = {
-		.front = 1,
-		.rear = 0,
-		.buffer = buffer,
-		.queueSize = queueSize,
-		.elementSize = elementSize
+	event_queue_t newQueue = {
+			.queue = createQueue(buffer, queueSize, elementSize),
+			.generatorsCount = 0
 	};
-	return queue;
+	return newQueue;
 }
 
-void clear(queue_t* queue)
+bool registerEventGenerator(event_queue_t* queue, event_generator_t generator)
 {
-	if (queue)
-	{
-		queue->front = 1;
-		queue->rear = 0;
-	}
-}
-
-bool isEmpty(queue_t* queue)
-{
-	return size(queue) == 0;
-}
-
-size_t size(queue_t* queue)
-{
-	size_t size = 0;
-	if (queue)
-	{
-		size = (queue->queueSize + queue->rear - queue->front + 1) % queue->queueSize;
-	}
-	return size;
-}
-
-bool push(queue_t* queue, void* element)
-{
-	// By default, succeed always :D
 	bool succeed = false;
 
 	if (queue)
 	{
-		if ((queue->rear + 2) % queue->queueSize != queue->front)
+		if (queue->generatorsCount < MAX_EVENT_GENERATORS)
 		{
-			// This code was approved by StackOverflow
-			// https://stackoverflow.com/questions/54498406/gcc-efficient-byte-copy-arm-cortex-m4
-			queue->rear = (queue->rear + 1) % queue->queueSize;
-			memcpy(queue->buffer + queue->rear * queue->elementSize, element, elementSize);
+			queue->eventGenerators[queue->generatorsCount++] = generator;
 			succeed = true;
 		}
 	}
+
 	// Return the succeed status
 	return succeed;
 }
 
-void* pop(queue_t* queue)
+void* getNextEvent(event_queue_t* queue)
 {
-	void* element = NULL;
+	void* element = NO_EVENTS;
 
 	if (queue)
 	{
-		if (!isEmpty(queue))
+		// Look for all events from generators
+		uint8_t	i;
+		void* ev;
+		for ( i = 0 ; i < queue->generatorsCount ; i++ )
 		{
-			element = queue->buffer + queue->front * queue->elementSize;
-			queue->front = (queue->front + 1) % queue->queueSize;
+			ev = queue->eventGenerators[i]();
+			if (ev != NO_EVENTS)
+			{
+				push(queue->queue, ev);
+			}
 		}
+		element = pop(queue->queue);
 	}
 
-	// Return the variable of result
+	// Return the next event
 	return element;
 }
 

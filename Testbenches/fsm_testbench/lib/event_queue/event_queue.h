@@ -1,11 +1,11 @@
-/*******************************************************************************
-  @file     queue
-  @brief    Queue data structure handler
+/***************************************************************************//**
+  @file     event_queue.h
+  @brief    [...]
   @author   G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
-#ifndef QUEUE_H_
-#define QUEUE_H_
+#ifndef EVENT_QUEUE_H_
+#define EVENT_QUEUE_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
@@ -18,15 +18,20 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define NO_EVENTS		NULL
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-// The implementation of the Queue uses one element to distinguish between
-// a full and an empty queue, so the queueSize should be always one more
-// than the actual maximum size desired.
-struct queue_t;
+// The implementation of the Event Queue uses one element to distinguish
+// between a full and an empty queue, so the queueSize should be always
+// one more than the actual maximum size desired.
+struct 		event_queue_t;
+
+typedef		void * (*event_generator_t)(void);
+
+
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
@@ -37,45 +42,28 @@ struct queue_t;
  ******************************************************************************/
 
 /**
- * @brief Creates a Queue instance from the buffer and size specified by user
+ * @brief Creates an Event Queue instance from the buffer and size specified by user
  * @param buffer		Pointer to the array reserved in memory
  * @param queueSize		Amount of elements in the array (fixed)
  * @param elementSize	Size in bytes of the element
  */
-queue_t createQueue(void* buffer, size_t queueSize, size_t elementSize);
+event_queue_t createEventQueue(void* buffer, size_t queueSize, size_t elementSize);
 
 /**
- * @brief Returns whether the queue is empty or not
- * @param queue		Pointer to the Queue instance
+ * @brief Registers an event generator. Returns true if succeeded or
+ * 		  false if there already were MAX_EVENT_GENERATORS.
+ * @param queue			Pointer to the Event Queue instance
+ * @param generator 	Callback to the generator
  */
-bool isEmpty(queue_t* queue);
-
-/*
- * @brief Returns the current size of the queue
- * @param queue		Pointer to the Queue instance
- */
-size_t size(queue_t* queue);
+bool registerEventGenerator(event_queue_t* queue, event_generator_t generator);
 
 /**
- * @brief Clear the Queue instance
- * @param queue		Pointer to the Queue instance
+ * @brief Returns next event from the queue, returns NO_EVENTS if there are
+ * 		  no events.
+ * @param queue			Pointer to the Event Queue instance
  */
-void clear(queue_t* queue);
+void* getNextEvent(event_queue_t* queue);
 
-/**
- * @brief Push a new element to the queue, and returns true if succeed
- * 		  or false if the queue was full
- * @param queue		Pointer to the Queue instance
- * @param element	Pointer to the new element to be pushed
- */
-bool push(queue_t* queue, void* element);
-
-/**
- * @brief Pop the next element from the queue. If no elements left it returns
- * null, else the pointer to the next element, REMEMBER to copy the element!
- * ¡The persistance of the element is temporary! Use it at your own risk.
- */
-void* pop(queue_t* queue);
 
 /*******************************************************************************
  ******************************************************************************/
