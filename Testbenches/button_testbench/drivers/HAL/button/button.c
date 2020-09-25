@@ -12,8 +12,6 @@
 #include "../../MCAL/systick/systick.h"
 #include "../../MCAL/gpio/gpio.h"
 #include "../../../board/board.h"
-#include "../../../lib/fsm/fsm.h"
-#include "../../../lib/event_queue/event_queue.h"
 #include "button.h"
 
 /*******************************************************************************
@@ -28,30 +26,27 @@
 
 #define	BUTTON_DEVELOPMENT_MODE 1
 
-#define EVENT_QUEUE_SIZE		10
-
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// FSM State IDs
+typedef enum {
+	RELEASED,
+	PRESSED,
+	TYPEMATIC
+} buttonFsmState_t;
+
 // FSM Event IDs
-enum {
+typedef enum {
 	NO_EVENT,
 	PRESS,
 	RELEASE,
 	TIMEOUT
-};
-
-typedef struct button button_t;
-
-// FSM Event Structure
-typedef struct {
-	event_id_t 		id;			// Event ID
-	button_t*		button;		// Button instance
-} button_fsm_event_t;
+} buttonFsmEv_t;
 
 // Button structure
-struct button {
+typedef struct {
 	// Button static properties
 	const pin_t 	pinNumber;			// Board pin assigned to button
 	const bool 		activeState;		// Whether the button is active high or low
@@ -61,14 +56,13 @@ struct button {
 	// External event emitters, call this functions on each event
 	void 			(*evCallbacks[BUTTON_EV_COUNT]) (void);
 
-	// FSM and event handling
-	state_t 		fsmState;
-	event_queue_t*  eventQueue;
+	// FSM state
+	buttonFsmState_t fsmState;
 
-	// Internal variables
-	uint32_t 		debounceTicks;
-	uint32_t 		timeoutCount;
-};
+	// Counters for debounce and LKP/TYPEMATIC timeouts
+	uint32_t debounceTicks;
+	uint32_t timeoutCount;
+} button_t;
 
 /*******************************************************************************
  * VARIABLES WITH GLOBAL SCOPE
@@ -78,18 +72,8 @@ struct button {
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static void buttonCycle(void);
-
-// Event Generators declaration
-event_generator_t buttonReader;
-event_generator_t buttonTimer;
-
-// FSM Action Routines declaration
-static action_t buttonPressed;
-static action_t typematicInit;
-static action_t buttonReleased;
-static action_t typematicTimeout;
-static action_t doNothing;
+static buttonFsmState_t buttonFSMCycle(buttonFsmState_t prevState, buttonFsmEv_t ev, button_t *button);
+static void handleCount(void);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -100,39 +84,10 @@ static action_t doNothing;
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-
 static button_t buttons[BUTTON_COUNT] = {
 	//	  Pin	  	ActiveState PE		MsBounce
-		{ PIN_SW2,	SW2_ACTIVE,	true,	100 	},
-		{ PIN_SW3,	SW3_ACTIVE, true,	100 	}
-};
-
-// Current button index
-static uint8_t i;			// Used by event generators to know which button is being handled
-
-// FSM States
-// Global because static variables can only be initialized with const values
-// https://stackoverflow.com/questions/3025050/error-initializer-element-is-not-constant-when-trying-to-initialize-variable-w
-extern state_t released;
-extern state_t pressed;
-extern state_t typematic;
-
-
-state_t released = {
-		{ PRESS, pressed, buttonPressed },
-		  DEFAULT_EDGE(released, doNothing)
-};
-
-state_t pressed = {
-		{ TIMEOUT, typematic, typematicInit },
-		{ RELEASE, released, buttonReleased },
-		  DEFAULT_EDGE(pressed, doNothing)
-};
-
-state_t typematic = {
-		{ TIMEOUT, typematic, typematicTimeout },
-		{ RELEASE, released, buttonReleased },
-		  DEFAULT_EDGE(typematic, doNothing)
+		{ PIN_SW3,	SW3_ACTIVE, true,	100 	},
+		{ PIN_SW4,	SW4_ACTIVE, true,	100  	},
 };
 
 
@@ -145,10 +100,7 @@ state_t typematic = {
 void buttonInit(void)
 {
 	// Configure periodic interrupts
-	SysTick_Init(buttonCycle);
-
-	// Reserve memory for each eventQueue
-	static button_fsm_event_t queueBuffers[BUTTON_COUNT][EVENT_QUEUE_SIZE + 1];
+	SysTick_Init(handleCount);
 
 	// Construct each button instance
 	uint8_t i;
@@ -156,18 +108,7 @@ void buttonInit(void)
 	for( i = 0 ; i < BUTTON_COUNT ; i++)
 	{
 		// Initial FSM state
-		buttons[i].fsmState = released;
-
-		// Create event queue
-		buttons[i].eventQueue = createEventQueue(
-				(void *)(queueBuffers[i]),
-				EVENT_QUEUE_SIZE + 1,
-				sizeof(button_fsm_event_t)
-			);
-
-		// Register event generators
-		registerEventGenerator(&(buttons[i].eventQueue), buttonReader);
-		registerEventGenerator(&(buttons[i].eventQueue), buttonTimer);
+		buttons[i].fsmState = RELEASED;
 
 		// Check if pullup/down was requested and configure pins for GPIO input
 		if (buttons[i].pullEnable)
@@ -206,128 +147,119 @@ bool isButtonPressed(button_id_t id)
  *******************************************************************************
  ******************************************************************************/
 
-void buttonCycle(void)
+void handleCount(void)
 {
-	button_fsm_event_t* ev;
-	button_fsm_event_t  evCopy;
+	uint8_t i;
+	bool active;
+	buttonFsmEv_t ev;
+	buttonFsmState_t state;
 
 	for( i = 0 ; i < BUTTON_COUNT ; i++)
 	{
-		ev = getNextEvent(buttons[i].eventQueue);
-		if(ev != NO_EVENTS)
+		// If we are not waiting for debounce
+		if( buttons[i].debounceTicks == 0 )
 		{
-			// Copy the event! No persistence guaranteed
-			evCopy = *(button_fsm_event_t *)(ev);
+			// No event by default
+			ev = NO_EVENT;
 
-			// Cycle State Machine
-			fsmCycle( &(buttons[i].fsmState), evCopy);
+			// Check whether the button is being pressed of not
+			active = (gpioRead(buttons[i].pinNumber) == buttons[i].activeState);
+			state = buttons[i].fsmState;
+
+			// If there was a change on the button state, emit respective event
+			if ( active &&  (state == RELEASED) )
+			{
+				ev = PRESS;
+			}
+			else if ( !active && (state != RELEASED) )
+			{
+				ev = RELEASE;
+			}
+			else if (buttons[i].timeoutCount > 0)
+			{
+				if(--buttons[i].timeoutCount == 0)
+				{
+					ev = TIMEOUT;
+				}
+			}
+
+			// Check if something happened
+			if( ev != NO_EVENT )
+			{
+				// Cycle State Machine
+				buttons[i].fsmState = buttonFSMCycle(state, ev, &(buttons[i]) );
+			}
+
+			// Configure debounce if button pressed or released
+			if ((ev == PRESS) || (ev == RELEASE))
+			{
+				buttons[i].debounceTicks = MS2TICKS(buttons[i].debounceMillis);
+			}
+		}
+		else
+		{
+			buttons[i].debounceTicks--;
 		}
 	}
 }
 
 
-// Event Generators definition
-
-void * buttonReader(void)
+buttonFsmState_t buttonFSMCycle(buttonFsmState_t prevState, buttonFsmEv_t ev, button_t *button)
 {
-	// Internal use variables
-	static bool active;
-	static state_t	currentState;
+	buttonFsmState_t nextState = prevState;
+	button_events_t subscribedEv = BUTTON_EV_COUNT;
 
-	static button_fsm_event	 newEvent;
-	static button_fsm_event* evPointer;
-
-	// No event by default
-	evPointer = NO_EVENTS;
-
-	// If we are not waiting for debounce
-	if( buttons[i].debounceTicks == 0 )
+	switch(prevState)
 	{
-		// Check whether the button is being pressed or not
-		active = (gpioRead(buttons[i].pinNumber) == buttons[i].activeState);
-		currentState = buttons[i].fsmState;
-
-		// If there was a change on the button state, emit respective event
-		if ( active &&  (currentState == released) )
+	case RELEASED:
+		if (ev == PRESS)
 		{
-			newEvent.id = PRESS;
-			newEvent.button = &(buttons[i]);
-			evPointer = &newEvent;
+			nextState = PRESSED;
+			button->timeoutCount = MS2TICKS(LKP_MS);
+			subscribedEv = BUTTON_PRESS;
 		}
-		else if ( !active && (currentState != released) )
+		break;
+	case PRESSED:
+		if (ev == RELEASE)
 		{
-			newEvent.id = RELEASE;
-			newEvent.button = &(buttons[i]);
-			evPointer = &newEvent;
+			nextState = RELEASED;
+			button->timeoutCount = 0;
+			subscribedEv = BUTTON_RELEASE;
 		}
-
-		// Configure debounce if button pressed or released
-		if (evPointer != NO_EVENTS)
+		else if (ev == TIMEOUT)
 		{
-			buttons[i].debounceTicks = MS2TICKS(buttons[i].debounceMilis);
+			nextState = TYPEMATIC;
+			button->timeoutCount = MS2TICKS(TYPEMATIC_MS);
+			subscribedEv = BUTTON_LKP;
 		}
+		break;
+	case TYPEMATIC:
+		if (ev == RELEASE)
+		{
+			nextState = RELEASED;
+			button->timeoutCount = 0;
+			subscribedEv = BUTTON_RELEASE;
+		}
+		else if (ev == TIMEOUT)
+		{
+			nextState = TYPEMATIC;
+			button->timeoutCount = MS2TICKS(TYPEMATIC_MS);
+			subscribedEv = BUTTON_TYPEMATIC;
+		}
+		break;
 	}
-	else
+
+	// If there is an event to emit
+	if(subscribedEv < BUTTON_EV_COUNT)
 	{
-		buttons[i].debounceTicks--;
-	}
-
-	return evPointer;
-}
-
-void * buttonTimer(void)
-{
-	// Internal use variables
-	static button_fsm_event		newEvent;
-	static button_fsm_event*	evPointer;
-
-	evPointer = NO_EVENTS;
-
-	if (buttons[i].timeoutCount > 0)
-	{
-		if(--buttons[i].timeoutCount == 0)
+		// Emit external event if somebody is subscribed
+		if(button->evCallbacks[subscribedEv])
 		{
-			newEvent.id = TIMEOUT;
-			newEvent.button = &(buttons[i]);
-			evPointer = &newEvent;
+			(button->evCallbacks[subscribedEv])();
 		}
 	}
 
-	return evPointer;
+	return nextState;
 }
-
-
-// FSM Action Routines definition
-
-static void buttonPressed(void* event)
-{
-	button_t * button = ((button_fsm_event_t *)event)->button;
-	button->timeoutCount = MS2TICKS(LKP_MS);
-	(button->evCallbacks[BUTTON_PRESS])();
-}
-
-static void typematicInit(void* event)
-{
-	button_t * button = ((button_fsm_event_t *)event)->button;
-	button->timeoutCount = MS2TICKS(TYPEMATIC_MS);
-	(button->evCallbacks[BUTTON_LKP])();
-}
-
-static void buttonReleased(void* event)
-{
-	button_t * button = ((button_fsm_event_t *)event)->button;
-	button->timeoutCount = 0;
-	(button->evCallbacks[BUTTON_RELEASE])();
-}
-
-static void typematicTimeout(void* event)
-{
-	button_t * button = ((button_fsm_event_t *)event)->button;
-	button->timeoutCount = MS2TICKS(TYPEMATIC_MS);
-	(button->evCallbacks[BUTTON_TYPEMATIC])();
-
-}
-
-static void doNothing(void* event) {}
 
 /******************************************************************************/

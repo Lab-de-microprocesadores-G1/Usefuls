@@ -23,10 +23,12 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-void pressCallback(void);
-void releaseCallback(void);
-void typematicCallback(void);
-void lkpCallback(void);
+void boardRedOn(void);
+void boardRedOff(void);
+void protoRedOn(void);
+void protoRedOff(void);
+void toggleGreen(void);
+void toggleBlue(void);
 
 /*******************************************************************************
  *******************************************************************************
@@ -37,15 +39,28 @@ void lkpCallback(void);
 /* Función que se llama 1 vez, al comienzo del programa */
 void App_Init (void)
 {
+	// Configure LED pins for output
     gpioMode(PIN_LED_BLUE, OUTPUT);
     gpioMode(PIN_LED_RED, OUTPUT);
+    gpioMode(PIN_LED_GREEN, OUTPUT);
+    gpioMode(PIN_LED_OUT, OUTPUT);
 	gpioToggle(PIN_LED_BLUE);
 	gpioToggle(PIN_LED_RED);
+	gpioToggle(PIN_LED_GREEN);
+	gpioToggle(PIN_LED_OUT);
+
+	// Configure buttons drivers
     buttonInit();
-    buttonSubscribe(BUTTON_1, BUTTON_PRESS, pressCallback);
-    buttonSubscribe(BUTTON_1, BUTTON_RELEASE, releaseCallback);
-    buttonSubscribe(BUTTON_1, BUTTON_TYPEMATIC, typematicCallback);
-    buttonSubscribe(BUTTON_1, BUTTON_LKP, lkpCallback);
+
+    // Board button
+    buttonSubscribe(BUTTON_1, BUTTON_PRESS, boardRedOn);
+    buttonSubscribe(BUTTON_1, BUTTON_RELEASE, boardRedOff);
+    buttonSubscribe(BUTTON_1, BUTTON_TYPEMATIC, toggleBlue);
+
+    // Protoboard button
+    buttonSubscribe(BUTTON_2, BUTTON_PRESS, protoRedOn);
+    buttonSubscribe(BUTTON_2, BUTTON_RELEASE, protoRedOff);
+    buttonSubscribe(BUTTON_2, BUTTON_TYPEMATIC, toggleGreen);
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
@@ -60,28 +75,37 @@ void App_Run (void)
  *******************************************************************************
  ******************************************************************************/
 
-void pressCallback(void)
+void boardRedOn(void)
 {
-	gpioToggle(PIN_LED_BLUE);
+	gpioWrite(PIN_LED_RED, LOW);
 }
 
-void releaseCallback(void)
+void boardRedOff(void)
 {
-	gpioWrite(PIN_LED_BLUE, HIGH);
 	gpioWrite(PIN_LED_RED, HIGH);
+	gpioWrite(PIN_LED_BLUE, HIGH);
 }
 
-void lkpCallback(void)
+void protoRedOn(void)
+{
+	gpioWrite(PIN_LED_OUT, LOW);
+}
+
+void protoRedOff(void)
+{
+	gpioWrite(PIN_LED_OUT, HIGH);
+	gpioWrite(PIN_LED_GREEN, HIGH);
+}
+
+void toggleGreen(void)
+{
+	gpioToggle(PIN_LED_GREEN);
+}
+
+void toggleBlue(void)
 {
 	gpioToggle(PIN_LED_BLUE);
 }
-
-void typematicCallback(void)
-{
-	gpioToggle(PIN_LED_RED);
-}
-
-
 
 /*******************************************************************************
  ******************************************************************************/

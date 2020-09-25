@@ -24,12 +24,19 @@
 #define PIN_LED_GREEN   PORTNUM2PIN(PE, 26) // PTE26
 #define PIN_LED_BLUE    PORTNUM2PIN(PB, 21) // PTB21
 
+// Off Board User LED
+#define PIN_LED_OUT		PORTNUM2PIN(PC, 2)  // PTC2
+
 // On Board User Switches
 #define PIN_SW2         PORTNUM2PIN(PC, 6)  // PTC6
 #define PIN_SW3         PORTNUM2PIN(PA, 4)  // PTA4
 
 #define SW2_ACTIVE		LOW
 #define SW3_ACTIVE		LOW
+
+// Off Board User Switch
+#define PIN_SW4			PORTNUM2PIN(PC, 3)	// PTC3
+#define SW4_ACTIVE		HIGH
 
 // Active Status
 #define LED_ACTIVE      LOW
