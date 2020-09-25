@@ -8,13 +8,11 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include <stdint.h>
-#include "../queue/queue.h"
+#include "event_queue.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
-
 
 
 /*******************************************************************************
@@ -22,27 +20,20 @@
  ******************************************************************************/
 
 
-typedef struct {
-	queue_t				queue;									 // Queue to save events
-	event_generator_t	eventGenerators[MAX_EVENT_GENERATORS];	 // Registered event generators
-	bool				enabledGenerators[MAX_EVENT_GENERATORS]; // Generators can be ignored
-	uint8_t				generatorsCount;						 // Amount of registered event generators
-} event_queue_t;
-
-
 /*******************************************************************************
  * VARIABLES WITH GLOBAL SCOPE
  ******************************************************************************/
+
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 
-
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
+
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -113,11 +104,11 @@ void* getNextEvent(event_queue_t* queue)
 				ev = queue->eventGenerators[i]();
 				if (ev != NO_EVENTS)
 				{
-					push(queue->queue, ev);
+					push(&queue->queue, ev);
 				}
 			}
 		}
-		element = pop(queue->queue);
+		element = pop(&queue->queue);
 	}
 
 	// Return the next event

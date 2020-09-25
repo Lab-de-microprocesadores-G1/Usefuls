@@ -12,7 +12,10 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
+
+#include "../queue/queue.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -26,13 +29,23 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// Events are injected in the Event Queue by Event Generators
+// registered in it, so every time the queue updates the events, calls
+// all its generators.
+// When registering a new event generator, the event queue will return its id.
+typedef	void* (*event_generator_t)(void);
+
+typedef	uint8_t	generator_id_t;
+
 // The implementation of the Event Queue uses one element to distinguish
 // between a full and an empty queue, so the queueSize should be always
 // one more than the actual maximum size desired.
-struct 	event_queue_t;
-
-typedef	void * (*event_generator_t)(void);
-typedef	uint8_t	generator_id_t;
+typedef struct event_queue{
+	queue_t				queue;									 // Queue to save events
+	event_generator_t	eventGenerators[MAX_EVENT_GENERATORS];	 // Registered event generators
+	bool				enabledGenerators[MAX_EVENT_GENERATORS]; // Generators can be ignored
+	uint8_t				generatorsCount;						 // Amount of registered event generators
+} event_queue_t;
 
 
 /*******************************************************************************
