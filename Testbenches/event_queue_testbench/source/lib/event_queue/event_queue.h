@@ -83,7 +83,8 @@ bool setEnable(event_queue_t* queue, generator_id_t id, bool enable);
 
 /**
  * @brief Returns next event from the queue, returns NO_EVENTS if there are
- * 		  no events.
+ * 		  no events. REMEMBER to copy the event!
+ * 		  ¡The persistence of the event is temporary! Use it at your own risk.
  * @param queue			Pointer to the Event Queue instance
  */
 void* getNextEvent(event_queue_t* queue);

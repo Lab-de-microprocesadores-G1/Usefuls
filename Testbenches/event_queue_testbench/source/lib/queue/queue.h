@@ -85,7 +85,7 @@ bool push(queue_t* queue, void* element);
 /**
  * @brief Pop the next element from the queue. If no elements left it returns
  * null, else the pointer to the next element, REMEMBER to copy the element!
- * ¡The persistance of the element is temporary! Use it at your own risk.
+ * ¡The persistence of the element is temporary! Use it at your own risk.
  */
 void* pop(queue_t* queue);
 
