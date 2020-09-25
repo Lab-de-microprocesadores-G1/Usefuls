@@ -34,7 +34,7 @@ static void puller(void);
  * VARIABLES TYPES DEFINITIONS
  ******************************************************************************/
 
-// 1 OF X STEPS USING THE QUEUE LIBRARY: Elements of the Queue
+// 1 OF 3 STEPS USING THE QUEUE LIBRARY: Elements of the Queue
 //
 // Declare and define the elements that ONLY you know that will be used
 // in the queue. Obviously,
@@ -48,14 +48,14 @@ typedef struct {
  ******************************************************************************/
 static uint8_t counter = 0;
 
-// 2 OF X STEPS USING THE QUEUE LIBRARY: Create the Queue buffer
+// 2 OF 3 STEPS USING THE QUEUE LIBRARY: Create the Queue buffer
 //
 // You must create an array of the size of elements wanted for the queue,
 // this is because the micro-framework created only handles a queue and does not
 // manages memory resources.
 static element_t buffer[MAX_QUEUE_SIZE];
 
-// 3A OF X STEPS USING THE QUEUE LIBRARY: Create the Queue
+// 3A OF 3 STEPS USING THE QUEUE LIBRARY: Create the Queue
 //
 // Here, this will be done as two steps, but this is only because of the context
 // in which I'm testing the micro-framework. Other cases would combine both parts
@@ -85,7 +85,7 @@ void App_Init (void)
 	gpioIRQ(PIN_SW2, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, pusher);
 	gpioIRQ(PIN_SW3, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, puller);
 
-	// 3B OF X STEPS USING THE QUEUE LIBRARY: Create the Queue
+	// 3B OF 3 STEPS USING THE QUEUE LIBRARY: Create the Queue
 	queue = createQueue(&buffer, MAX_QUEUE_SIZE, sizeof(element_t));
 }
 
