@@ -78,7 +78,8 @@ static void ledDisable(led_id_t id);
 
 static led_t leds[AMOUNT_OF_LEDS] = {
 		{PIN_LED_RED, LED_ACTIVE},
-		{PIN_LED_BLUE, LED_ACTIVE}
+		{PIN_LED_BLUE, LED_ACTIVE},
+		{PIN_LED_GREEN, LED_ACTIVE}
 };
 
 /*******************************************************************************
