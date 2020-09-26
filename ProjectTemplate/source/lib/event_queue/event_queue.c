@@ -59,9 +59,14 @@ generator_id_t registerEventGenerator(event_queue_t* queue, event_generator_t ge
 {
 	generator_id_t id = OUT_OF_GENERATORS;
 
+#ifdef EVENT_QUEUE_DEVELOPMENT_MODE
 	if (queue)
+#endif
 	{
+
+#ifdef EVENT_QUEUE_DEVELOPMENT_MODE
 		if (queue->generatorsCount < MAX_EVENT_GENERATORS)
+#endif
 		{
 			queue->eventGenerators[queue->generatorsCount] = generator;
 			queue->enabledGenerators[queue->generatorsCount] = true;
@@ -77,7 +82,9 @@ bool setEnable(event_queue_t* queue, generator_id_t id, bool enable)
 {
 	bool succeed = false;
 
+#ifdef EVENT_QUEUE_DEVELOPMENT_MODE
 	if (queue && id < queue->generatorsCount)
+#endif
 	{
 		queue->enabledGenerators[id] = enable;
 		succeed = true;
@@ -91,7 +98,9 @@ void* getNextEvent(event_queue_t* queue)
 {
 	void* element = NO_EVENTS;
 
+#ifdef EVENT_QUEUE_DEVELOPMENT_MODE
 	if (queue)
+#endif
 	{
 		// Look for all events from generators
 		uint8_t	i;
