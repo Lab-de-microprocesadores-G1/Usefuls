@@ -77,13 +77,13 @@ void App_Init (void)
 	// Initialization of led driver
 	ledInit();
 
-	// GPIO switches initialization
-	gpioMode(PIN_SW2, INPUT | PULLUP);
-	gpioMode(PIN_SW3, INPUT | PULLUP);
-
 	// Registering interruption callbacks
 	gpioIRQ(PIN_SW2, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, pusher);
 	gpioIRQ(PIN_SW3, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, puller);
+
+	// GPIO switches initialization
+	gpioMode(PIN_SW2, INPUT | PULLUP);
+	gpioMode(PIN_SW3, INPUT | PULLUP);
 
 	// 3B OF 3 STEPS USING THE QUEUE LIBRARY: Create the Queue
 	queue = createQueue(&buffer, MAX_QUEUE_SIZE, sizeof(element_t));
