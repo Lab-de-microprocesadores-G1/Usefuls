@@ -19,7 +19,7 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define END_OF_STATE						0xFFFFFFFFF
+#define END_OF_STATE						(uint32_t)0xFFFFFFFFF
 
 // All states MUST have a default edge!
 #define DEFAULT_EDGE(state, callback)		{END_OF_STATE, (state), (callback)}
@@ -49,7 +49,7 @@ typedef void (*action_t)(void*);
 typedef struct edge edge_t;
 
 // State definition
-typedef edge_t *state_t;
+typedef edge_t*  state_t;
 
 // Edge structure
 struct edge {
