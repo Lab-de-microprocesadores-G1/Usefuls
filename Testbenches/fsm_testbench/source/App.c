@@ -94,7 +94,7 @@ void App_Run (void)
 	// Get next event
 	io_event_t event = ioGetNextEvent();
 
-	if (event != IO_EVENT_NONE)
+	if (event.id != IO_EVENT_NONE)
 	{
 		// 4 OF 4 STEPS USING FSM: Cycle the state machine
 		//

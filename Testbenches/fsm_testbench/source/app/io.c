@@ -80,7 +80,7 @@ void ioLed(io_led_t led, bool status)
 
 io_event_t ioGetNextEvent(void)
 {
-	io_event_t event = IO_EVENT_NONE;
+	io_event_t event = { IO_EVENT_NONE };
 
 	void* nextEvent = getNextEvent(&eventQueue);
 	if (nextEvent)
@@ -133,25 +133,25 @@ void* hardwareEventGenerator(void)
 
 void buttonLeftPressed(void)
 {
-	io_event_t event = { IO_EVENT_LEFT_KEY_PRESSED };
+	io_event_t event = { IO_EVENT_LEFT_KEY_PRESSED, 10 };
 	push(&hardwareQueue, &event);
 }
 
 void buttonLeftReleased(void)
 {
-	io_event_t event = { IO_EVENT_LEFT_KEY_RELEASED };
+	io_event_t event = { IO_EVENT_LEFT_KEY_RELEASED, 20 };
 	push(&hardwareQueue, &event);
 }
 
 void buttonRightPressed(void)
 {
-	io_event_t event = { IO_EVENT_RIGHT_KEY_PRESSED };
+	io_event_t event = { IO_EVENT_RIGHT_KEY_PRESSED, 30 };
 	push(&hardwareQueue, &event);
 }
 
 void buttonRightReleased(void)
 {
-	io_event_t event = { IO_EVENT_RIGHT_KEY_RELEASED };
+	io_event_t event = { IO_EVENT_RIGHT_KEY_RELEASED, 40 };
 	push(&hardwareQueue, &event);
 }
 

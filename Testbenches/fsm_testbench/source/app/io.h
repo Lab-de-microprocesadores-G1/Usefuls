@@ -22,16 +22,19 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef uint32_t io_event_t;
-
-enum {
+typedef enum {
 	IO_EVENT_NONE,
 	IO_EVENT_LEFT_KEY_PRESSED,
 	IO_EVENT_LEFT_KEY_RELEASED,
 	IO_EVENT_RIGHT_KEY_PRESSED,
 	IO_EVENT_RIGHT_KEY_RELEASED,
 	IO_EVENT_TIMEOUT
-};
+} io_event_id_t;
+
+typedef struct {
+	uint32_t 	id;
+	uint32_t	dummy;
+} io_event_t;
 
 typedef enum {
 	IO_LED_RED,
