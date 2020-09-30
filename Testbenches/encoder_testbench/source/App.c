@@ -31,7 +31,8 @@ static void change_colour(void);
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
  ******************************************************************************/
-typedef enum {RED, GREEN, BLUE} colour_t;
+typedef enum {RED, GREEN, BLUE};
+typedef int8_t colour_t;
 
 
 /*******************************************************************************

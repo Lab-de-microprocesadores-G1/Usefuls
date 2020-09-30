@@ -145,8 +145,8 @@ encoder_state_t RCC2[] = {
   {DEFAULT_EV, RCC2, noActRoutine}
 };
 encoder_state_t RCC3[] = {
-  {A_NEG_EDGE, RCC2, rotateCounterClockwise},
-  {B_POS_EDGE, IDLE, noActRoutine},
+  {A_NEG_EDGE, RCC2, noActRoutine},
+  {B_POS_EDGE, IDLE, rotateCounterClockwise},
   {DEFAULT_EV, RCC3, noActRoutine}
 };
 
@@ -249,7 +249,7 @@ void FSMCycle(encoder_id_t id, encoder_signal_t signal)
     encoder_fsm_event_t ev = getEvent(id, signal);
 
     encoder_state_t* stateIterator = encodersList[id].currentState;
-    while (stateIterator->event != ev && stateIterator != DEFAULT_EV)
+    while (stateIterator->event != ev && stateIterator->event != DEFAULT_EV)
     {
       stateIterator++;
     }
