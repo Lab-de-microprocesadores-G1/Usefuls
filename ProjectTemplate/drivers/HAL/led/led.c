@@ -10,10 +10,10 @@
 
 #include "led.h"
 
-#include "drivers/MCAL/gpio/gpio.h"
-#include "drivers/MCAL/systick/SysTick.h"
+#include "../../MCAL/gpio/gpio.h"
+#include "../../MCAL/systick/SysTick.h"
 
-#include "board/board.h"
+#include "../../../board/board.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
