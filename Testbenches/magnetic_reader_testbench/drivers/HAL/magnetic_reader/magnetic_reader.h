@@ -36,10 +36,14 @@
  */
 void magneticReaderInit(void);
 
- /**
- * @brief Returns error if read failed.
- */
-bool getCardNumber(uint32_t id[]);
+/**
+* @brief Callbacks to the card information and error.
+* @param dataCb callback to get new card event.
+* @param errorCb callback to check for error.
+*/
+void magneticReaderSubscribe(void (*dataCb) (uint8_t data[]), void (*errorCb) (void));
+
+
 
 /*******************************************************************************
  ******************************************************************************/

@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     button.h
   @brief    Buttons driver
-  @author   Nicolás Trozzo
+  @author   G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 #ifndef BUTTON_BUTTON_H_
@@ -35,8 +35,8 @@ typedef enum {
 
 
 typedef enum {
-	BUTTON_1,
-	BUTTON_2,
+	BUTTON_RIGHT,
+	BUTTON_LEFT,
 	BUTTON_COUNT
 } button_id_t;
 
@@ -48,8 +48,6 @@ typedef enum {
  * @brief Initialize button and corresponding peripheral
  */
 void buttonInit(void);
-
-// Non-Blocking services //
 
 /**
  * @brief Suscribe to button event

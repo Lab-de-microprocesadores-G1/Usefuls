@@ -10,10 +10,10 @@
 
 #include "led.h"
 
-#include "drivers/MCAL/gpio/gpio.h"
-#include "drivers/MCAL/systick/SysTick.h"
+#include "../../MCAL/gpio/gpio.h"
+#include "../../MCAL/systick/SysTick.h"
 
-#include "board/board.h"
+#include "../../../board/board.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -138,7 +138,7 @@ void ledTurn(led_id_t id, led_status_t status)
 		led_t *led = &leds[id];
 		led->enabled = false;
 		led->currentMode = STATIC;
-		gpioWrite(led->pin, status == ON ? led->activeState : led->activeState);
+		gpioWrite(led->pin, status == ON ? led->activeState : !led->activeState);
 		led->enabled = true;
 	}
 #ifdef LED_DEVELOPMENT_MODE

@@ -21,7 +21,7 @@
 #define MAG_CARD_CLK      PIN_MAG_CARD_CLK
 
 #define DATA_CHARS        40
-#define BITS_PER_CHAR	    5
+#define BITS_PER_CHAR	  5
 #define DATA_LENGTH       DATA_CHARS * BITS_PER_CHAR
 
 /*******************************************************************************
@@ -38,11 +38,17 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
+
+static void edgesHandler(void);
 static void cardSwipe(void);
 static void cardSwipeStopped(void);
 static void dataRead(void);
-static void dataCheck(void);
-
+static bool getUsefulData(void);
+static uint16_t searchSS(void);
+static uint16_t searchES(uint16_t ss);
+static bool dataParse(void);
+static void getCardNumber(void);
+static void clearData(void);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -53,10 +59,13 @@ static void dataCheck(void);
  ******************************************************************************/
 
 static bool     enableActive;
-static bool     idReceibed;
-static bool     error = true;
-static uint32_t cardData[DATA_LENGTH];
+static bool     restart = false;
+static uint8_t 	cardData[DATA_LENGTH*2];
+static uint8_t	usefulCardData[DATA_LENGTH];
+static uint8_t 	finalId[40];
 
+static void 	(*dataCallback)(uint8_t data[]);
+static void 	(*errorCallback)(void);
 
 /*******************************************************************************
  *******************************************************************************
@@ -66,30 +75,23 @@ static uint32_t cardData[DATA_LENGTH];
 
 void magneticReaderInit(void)
 {
-  // Configure pins as input
-  gpioMode(MAG_CARD_ENABLE, INPUT);
-  gpioMode(MAG_CARD_DATA, INPUT);
-  gpioMode(MAG_CARD_CLK, INPUT);
+	// Configure pins as input
+	gpioMode(MAG_CARD_ENABLE, INPUT);
+	gpioMode(MAG_CARD_DATA, INPUT);
+	gpioMode(MAG_CARD_CLK, INPUT);
 
-  // Configure IRQ's
-  gpioIRQ(MAG_CARD_ENABLE, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, cardSwipe);
-  gpioIRQ(MAG_CARD_ENABLE, GPIO_IRQ_MODE_INTERRUPT_RISING_EDGE, cardSwipeStopped);
-  gpioIRQ(MAG_CARD_CLK, GPIO_IRQ_MODE_INTERRUPT_RISING_EDGE, dataRead);
+	// Configure IRQ's
+	gpioIRQ(MAG_CARD_ENABLE, GPIO_IRQ_MODE_INTERRUPT_BOTH_EDGES, edgesHandler);
+	gpioIRQ(MAG_CARD_CLK, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, dataRead);
 
 }
 
-bool getCardNumber(uint32_t id[])
+void magneticReaderSubscribe(void (*dataCb) (uint8_t data[]), void (*errorCb) (void))
 {
-  if(!error)
-  {
-    uint8_t i;
-    for(i = 0; i < 40; i++)
-    {
-      id[i] = cardData[i * BITS_PER_CHAR + 0] + (cardData[i * BITS_PER_CHAR + 1] << 1) + (cardData[i * BITS_PER_CHAR + 2] << 2) + (cardData[i * BITS_PER_CHAR + 3] << 3);
-    }
-  }
-  return !error;
+	dataCallback = dataCb;
+	errorCallback = errorCb;
 }
+
 
 /*******************************************************************************
  *******************************************************************************
@@ -97,83 +99,167 @@ bool getCardNumber(uint32_t id[])
  *******************************************************************************
  ******************************************************************************/
 
+static void edgesHandler(void)
+{
+	bool state;
+	state = gpioRead(MAG_CARD_ENABLE);
+	if(state)
+	{
+		cardSwipeStopped();
+	}
+	else
+	{
+		cardSwipe();
+	}
+}
+
 static void cardSwipe(void)
 {
-  enableActive = true;
+	enableActive = true;
 }
 
 static void cardSwipeStopped(void)
 {
-  enableActive = false;
-  if(idReceibed)
-  {
-    error = false;
-    dataCheck();
-    idReceibed = false;
-  }
-  else
-  {
-    error = true;
-  }
+	if(enableActive)
+	{
+		enableActive = false;
+		restart = true;
+
+		if(!dataParse())
+		{
+		    getCardNumber();
+		    dataCallback(finalId);
+		    clearData();
+		}
+		else
+		{
+			errorCallback();
+		}
+	}
 }
 
 static void dataRead(void)
 {
-  static uint32_t i = 0;
-  if(enableActive)
-  {
-    if(i < DATA_LENGTH && !idReceibed && !error)
-    {
-      cardData[i] = gpioRead(MAG_CARD_DATA);
-      i++;
-      idReceibed = false;
-    }
-    else if(error)
-    {
-      i = 0;
-      cardData[i] = gpioRead(MAG_CARD_DATA);
-      i++;
-      idReceibed = false;
-
-    }
-    else
-    {
-      i = 0;
-      idReceibed = true;
-    }
-  }
-  else
-  {
-    i = 0;
-    error = true;
-  }
+	static uint32_t bitCounter = 0;
+	if(restart)
+	{
+		bitCounter = 0;
+		restart = false;
+	}
+	if(enableActive)
+	{
+		cardData[bitCounter] = (!gpioRead(MAG_CARD_DATA));
+		bitCounter++;
+	}
+	else
+	{
+		bitCounter = 0;
+	}
 }
 
-static void dataCheck(void)
+static bool getUsefulData(void)
 {
-    // Check for parity bit
-    uint8_t  sum = 0;
-    uint8_t  i = 0;
-    uint8_t  j = 0;
-    for(i = 0; i < 40; i++)
-    {
-    	for(j = 0; j < 4; i++)
+	uint8_t  i = 0;
+	bool error = false;
+	uint16_t ss = searchSS();
+	uint16_t es = searchES(ss);
+	if(es == 0 || ss == 0)
+	{
+		error = true;
+	}
+	if(!error)
+	{
+		for(i = 0; i <= es - ss; i++)
 		{
-		  sum = (sum + cardData[i * BITS_PER_CHAR + j]);
+			usefulCardData[i] = cardData[ss + i];
 		}
-    	if((sum & (0x01)) == cardData[i * BITS_PER_CHAR + 4])			// Looking for the bit nº4 which is parity bit
+	}
+	return error;
+}
+
+static uint16_t searchSS(void)
+{
+	uint16_t i;
+	uint8_t incomingData[5] = {0, 0, 0, 0, 0};
+	uint8_t sum = 0;
+	for(i = 0; i < 400; i++)
+	{
+	    incomingData[0] = cardData[i];
+		sum = incomingData[4] + (incomingData[3] << 1) + (incomingData[2] << 2) + (incomingData[1] << 3) + (incomingData[0] << 4);
+		if(sum == 11)
 		{
-			error = true;
+			return i - 4;
 		}
 		else
 		{
-			error = false;
+			uint8_t bit;
+		    for(bit = 4; bit >= 1; bit--)
+		    {
+		        incomingData[bit] = incomingData[bit - 1];
+		    }
 		}
-    	sum = 0;
-    }
-    bool finalerror;
-    uint32_t id[40];
-    finalerror = getCardNumber(id);
+	}
+	return false;
+}
+
+static uint16_t searchES(uint16_t ss)
+{
+	uint16_t i, es = 0;
+	for(i = 0; i < 40; i++)
+	{
+		es = cardData[i * BITS_PER_CHAR + ss] + (cardData[i * BITS_PER_CHAR + ss + 1] << 1) + (cardData[i * BITS_PER_CHAR + ss + 2] << 2) + (cardData[i * BITS_PER_CHAR + ss + 3] << 3);
+		if(es == 0xF)
+		{
+			return i * BITS_PER_CHAR + ss + BITS_PER_CHAR;
+		}
+	}
+	return false;
+}
+
+
+static bool dataParse(void)
+{
+ // Check for parity bit
+	bool error = false;
+	uint8_t  i = 0;
+	uint8_t  j = 0;
+	uint8_t sum = 0;
+	error = getUsefulData();
+
+	if(!error)
+	{
+		for(i = 0; i < 40; i++)
+			{
+				for(j = 0; j < 4; j++)
+				{
+				  sum = (sum + usefulCardData[i * BITS_PER_CHAR + j]);
+				}
+				if((sum & (0x01)) == usefulCardData[i * BITS_PER_CHAR + 4])			// Looking for the bit nº4 which is parity bit
+				{
+					error = true;
+				}
+				sum = 0;
+			}
+	}
+    return error;
+}
+
+static void getCardNumber(void)
+{
+	uint8_t i;
+	for(i = 0; i < 40; i++)
+	{
+		finalId[i] =  usefulCardData[i * BITS_PER_CHAR + 0] + (usefulCardData[i * BITS_PER_CHAR + 1] << 1) + (usefulCardData[i * BITS_PER_CHAR + 2] << 2) + (usefulCardData[i * BITS_PER_CHAR + 3] << 3);
+	}
+}
+
+static void clearData(void)
+{
+	uint16_t i;
+	for(i = 0; i < 400; i++)
+	{
+		cardData[i] = 0;
+	}
 }
 
 /******************************************************************************/

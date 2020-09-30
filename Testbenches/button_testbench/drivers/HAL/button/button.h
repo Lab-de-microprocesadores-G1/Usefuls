@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     button.h
   @brief    Buttons driver
-  @author   Nicolás Trozzo
+  @author   G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 #ifndef BUTTON_BUTTON_H_
