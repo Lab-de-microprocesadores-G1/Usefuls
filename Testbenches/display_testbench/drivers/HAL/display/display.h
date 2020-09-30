@@ -11,6 +11,8 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdint.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -26,6 +28,13 @@ typedef enum uint8_t{
     DISPLAY_4,
     DISPLAY_COUNT
 } display_id_t;
+
+typedef enum{
+    MAX_DISPLAY_BRIGHTNESS = 0,
+    INT_DISPLAY_BRIGHTNESS = 2,
+    MIN_DISPLAY_BRIGHTNESS = 3
+
+}display_brightness_t;
 
 
 /*******************************************************************************

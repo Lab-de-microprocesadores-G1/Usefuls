@@ -21,7 +21,7 @@
 #define	SYSTICK_MS				    ( 1.0 / SYSTICK_ISR_FREQUENCY_HZ * 1000.0 )
 #define MS2TICKS(ms)  			    ( (ms) / SYSTICK_MS )
 
-#define MIN_REFRESH_MS              10
+#define MIN_REFRESH_MS              1
 #define DECODER_MAX                 4
 #define DISPLAY_SEGMENT_PIN_COUNT   8
 #define DISPLAY_PIN_MASK            1
@@ -44,13 +44,6 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-typedef enum{
-    MAX_DISPLAY_BRIGHTNESS = 1,
-    INT_DISPLAY_BRIGHTNESS = 3,
-    MIN_DISPLAY_BRIGHTNESS = 5
-
-}display_brightness_t;
-
 typedef struct {
     display_brightness_t brightnessLevel;
     display_brightness_t brightnessCount;
@@ -69,7 +62,8 @@ typedef struct {
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
-
+static void displayPISR(void);
+static uint8_t decode7seg(uint8_t chr);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -111,10 +105,10 @@ static const uint8_t seven_seg_digits_decode_gfedcba[78]= {
 static display_t displays[] = 
 {
 
- {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, true, true},
- {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, true, true},
- {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, true, true},
- {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, true, true}
+ {2, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true},
+ {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true},
+ {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true},
+ {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true}
 
 };
 
@@ -141,7 +135,7 @@ void displayInit(void)
     // 7-segment pin init (GPIO)
     for (uint8_t i = 0 ; i < sizeof(segmentPinout) ; i++)
     {
-        gpioWrite(segmentPinout[i], HIGH);
+        gpioWrite(segmentPinout[i], LOW);
         gpioMode(segmentPinout[i], OUTPUT);
     }
 
@@ -197,48 +191,49 @@ void displayClear(display_id_t id)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-static void displayPISR(void)
+void displayPISR(void)
 {
   static uint32_t tickCount = 0;          // PISR period time control
+  static uint8_t displayCount = 0;
 
     if ( tickCount == MS2TICKS(MIN_REFRESH_MS) )
     {
-        for (uint8_t i = 0 ; i < DISPLAY_COUNT ; i++)
-        {
+	    if (displayCount > (DISPLAY_COUNT - 1))
+	    {
+	    	displayCount = 0;
+	    }
 
-            if (displays[i].brightnessCount == 0)
-            {
-                if (displays[i].isEnabled)
-                {
-                        uint8_t character = displays[i].character;
+		gpioWrite(DISPLAY_DECODER_PIN_A, (displayCount & 0x1));
+		gpioWrite(DISPLAY_DECODER_PIN_B, (displayCount & 0x2));
 
-                    for (uint8_t j = 0 ; j < DISPLAY_SEGMENT_PIN_COUNT ; j++)
-                    {
-                        uint8_t out = character & DISPLAY_PIN_MASK;
-                        gpioWrite(segmentPinout[j], displays[i].isActiveLow ? ~out : out );
-                        character = character >> 1;
-                    }
+		if (displays[displayCount].brightnessCount == 0)
+		{
+			if (displays[displayCount].isEnabled)
+			{
+					uint8_t character = displays[displayCount].character;
 
-                    displays[i].brightnessCount = displays[i].brightnessLevel; // reload brightness counter
+				for (uint8_t j = 0 ; j < DISPLAY_SEGMENT_PIN_COUNT ; j++)
+				{
+					uint8_t out = character & DISPLAY_PIN_MASK;
+					gpioWrite(segmentPinout[j], displays[displayCount].isActiveLow ? !out : out );
+					character = character >> 1;
+				}
 
-                    /* Clear current display before moving to the next*/
+				displays[displayCount].brightnessCount = displays[displayCount].brightnessLevel; // reload brightness counter
+			}
+		}
 
-                    for (uint8_t j = 0 ; j < DISPLAY_SEGMENT_PIN_COUNT ; j++)
-                    {
-                        gpioWrite(segmentPinout[j], displays[i].isActiveLow ? HIGH : LOW);
-                    }
-                }
+		else
+		{
+			for (uint8_t i = 0; i < DISPLAY_SEGMENT_PIN_COUNT; i++)
+			{
+				gpioWrite(segmentPinout[i], LOW);
+			}
+			displays[displayCount].brightnessCount--;
+		}
 
-                else
-                {
-                    displays[i].brightnessCount--;
-                }          
-
-            }
-      
-        }
-
-    tickCount = 0;    // reset counter
+	    displayCount++;
+	    tickCount = 0;    // reset counter
     }
 
     else
@@ -246,14 +241,14 @@ static void displayPISR(void)
         tickCount++;
     }
 
-
 }
 
-static uint8_t decode7seg(uint8_t chr)
+uint8_t decode7seg(uint8_t chr)
 { /* assuming implementation uses ASCII */
     if (chr > (uint8_t)'z')
-        return 0x00;
-    return seven_seg_digits_decode_gfedcba[chr - '-'];
+        return (uint8_t)0x00;
+    uint8_t temp = chr - '-';
+    return seven_seg_digits_decode_gfedcba[temp];
 }
 
 /******************************************************************************/
