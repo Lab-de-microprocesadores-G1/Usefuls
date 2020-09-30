@@ -11,6 +11,7 @@
 // #include "../../board/board.h"
 #include "../../MCAL/gpio/gpio.h"
 #include "MK64F12.h"
+#include <stdio.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -25,8 +26,8 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-#define ENCODER0_A_PIN PORTNUM2PIN(PC,3)
-#define ENCODER0_B_PIN PORTNUM2PIN(PC,2)
+#define ENCODER0_A_PIN PORTNUM2PIN(PC,2)
+#define ENCODER0_B_PIN PORTNUM2PIN(PC,3)
 //* To add a new encoder:
 //* ENCODER1_A_PIN PORTNUM2PIN(port,pinNumber)
 //* ENCODER1_B_PIN PORTNUM2PIN(port,pinNumber)
@@ -62,7 +63,7 @@ typedef struct {
   encoder_isr_t isrB;
 } encoder_t;
 
-typedef enum uint8_t {
+typedef enum {
   A,
   B
 } encoder_signal_t;
@@ -97,12 +98,6 @@ static void rotateCounterClockwise(encoder_id_t id);
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
-static encoder_t encodersList[ENCODER_COUNT] = {
-  {ENCODER0_A_PIN, ENCODER0_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(0,A), ENCODER_ISR_HANDLER_NAME(0,B)}
-  //* To add a new encoder:
-  //* {ENCODER1_A_PIN, ENCODER1_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(1,A), ENCODER_ISR_HANDLER_NAME(1,B)}
-};
-
 extern encoder_state_t IDLE[];
 extern encoder_state_t RC1[];
 extern encoder_state_t RC2[];
@@ -111,40 +106,47 @@ extern encoder_state_t RCC1[];
 extern encoder_state_t RCC2[];
 extern encoder_state_t RCC3[];
 
+
+static encoder_t encodersList[ENCODER_COUNT] = {
+  {ENCODER0_A_PIN, ENCODER0_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(0,A), ENCODER_ISR_HANDLER_NAME(0,B)}
+  //* To add a new encoder:
+  //* {ENCODER1_A_PIN, ENCODER1_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(1,A), ENCODER_ISR_HANDLER_NAME(1,B)}
+};
+
 // Defining FSM.
 encoder_state_t IDLE[] = {
-  {A_POS_EDGE, RC1, noActRoutine},
-  {B_POS_EDGE, RCC1, noActRoutine},
+  {B_NEG_EDGE, IDLE, noActRoutine},
+  {A_NEG_EDGE, RCC1, noActRoutine},
   {DEFAULT_EV, IDLE, noActRoutine}
 };
 encoder_state_t RC1[] = {
-  {A_NEG_EDGE, IDLE, noActRoutine},
-  {B_POS_EDGE, RC2, noActRoutine},
+  {B_POS_EDGE, IDLE, noActRoutine},
+  {A_NEG_EDGE, RC2, noActRoutine},
   {DEFAULT_EV, RC1, noActRoutine}
 };
 encoder_state_t RC2[] = {
-  {A_NEG_EDGE, RC1, noActRoutine},
-  {B_NEG_EDGE, RC3, noActRoutine},
+  {A_POS_EDGE, RC1, noActRoutine},
+  {B_POS_EDGE, RC3, noActRoutine},
   {DEFAULT_EV, RC2, noActRoutine}
 };
 encoder_state_t RC3[] = {
-  {A_POS_EDGE, RC2, noActRoutine},
-  {B_NEG_EDGE, IDLE, rotateClockwise},
+  {B_NEG_EDGE, RC2, noActRoutine},
+  {A_POS_EDGE, IDLE, rotateClockwise},
   {DEFAULT_EV, RC3, noActRoutine}
 };
 encoder_state_t RCC1[] = {
-  {A_POS_EDGE, RCC2, noActRoutine},
-  {B_NEG_EDGE, IDLE, noActRoutine},
+  {A_POS_EDGE, IDLE, noActRoutine},
+  {B_NEG_EDGE, RCC2, noActRoutine},
   {DEFAULT_EV, RCC1, noActRoutine}
 };
 encoder_state_t RCC2[] = {
-  {A_NEG_EDGE, RCC1, noActRoutine},
-  {B_NEG_EDGE, RCC3, noActRoutine},
+  {B_POS_EDGE, RCC1, noActRoutine},
+  {A_POS_EDGE, RCC3, noActRoutine},
   {DEFAULT_EV, RCC2, noActRoutine}
 };
 encoder_state_t RCC3[] = {
-  {A_NEG_EDGE, IDLE, rotateCounterClockwise},
-  {B_POS_EDGE, RCC2, noActRoutine},
+  {A_NEG_EDGE, RCC2, rotateCounterClockwise},
+  {B_POS_EDGE, IDLE, noActRoutine},
   {DEFAULT_EV, RCC3, noActRoutine}
 };
 
