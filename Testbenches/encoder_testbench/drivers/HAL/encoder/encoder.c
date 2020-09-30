@@ -115,7 +115,7 @@ static encoder_t encodersList[ENCODER_COUNT] = {
 
 // Defining FSM.
 encoder_state_t IDLE[] = {
-  {B_NEG_EDGE, IDLE, noActRoutine},
+  {B_NEG_EDGE, RC1, noActRoutine},
   {A_NEG_EDGE, RCC1, noActRoutine},
   {DEFAULT_EV, IDLE, noActRoutine}
 };
