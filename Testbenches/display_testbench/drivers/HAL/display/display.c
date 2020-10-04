@@ -22,13 +22,13 @@
 #define	SYSTICK_MS				    ( 1.0 / SYSTICK_ISR_FREQUENCY_HZ * 1000.0 )
 #define MS2TICKS(ms)  			    ( (ms) / SYSTICK_MS )
 
-#define MIN_REFRESH_MS              2
+#define MIN_REFRESH_MS              1
 #define DECODER_MAX                 4
 #define DISPLAY_SEGMENT_PIN_COUNT   8
 #define DISPLAY_PIN_MASK            1
 #define DPOINT_ENABLE_MASK          0x80
 #define EMPTY_DISPLAY               0x00
-#define DISPLAY_BLINK_PERIOD_MS     300
+#define DISPLAY_BLINK_PERIOD_MS     600
 
 /* pinout */
 #define DISPLAY_SEGA            DISPLAY_SEGA_PIN       //! (definir adecuadamente)
@@ -232,6 +232,7 @@ void displayPISR(void)
 
     if ( tickCount == MS2TICKS(MIN_REFRESH_MS) )
     {
+        clearDisplay();
 	    if (displayCount > (DISPLAY_COUNT - 1))
 	    {
 	    	displayCount = 0;
