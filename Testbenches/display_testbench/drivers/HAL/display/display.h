@@ -36,6 +36,12 @@ typedef enum{
 
 }display_brightness_t;
 
+typedef enum{
+    DISPLAY_ON,
+    DISPLAY_OFF,
+    DISPLAY_BLINK
+}display_state_t;
+
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
@@ -95,6 +101,19 @@ void displayDotClear(display_id_t id);
  * @param id id of the display.
  */
 void displayClear(display_id_t id);
+
+/**
+ * @brief Set display's state.
+ * @param id id of the display.
+ * @param state state of the display.
+ */
+void displayChangeState(display_id_t id, display_state_t state);
+
+/**
+ * @brief Write string on array of displays.
+ * @param string string to write.
+ */
+void displayWriteWord(char string[]);
 /*******************************************************************************
  ******************************************************************************/
 

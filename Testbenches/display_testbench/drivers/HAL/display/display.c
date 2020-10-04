@@ -27,6 +27,7 @@
 #define DISPLAY_PIN_MASK            1
 #define DPOINT_ENABLE_MASK          0x80
 #define EMPTY_DISPLAY               0x00
+#define DISPLAY_BLINK_PERIOD_MS     1000
 
 /* pinout */
 #define DISPLAY_SEGA_PIN            PORTNUM2PIN(PC,5)   //! (definir adecuadamente)
@@ -47,9 +48,11 @@
 typedef struct {
     display_brightness_t brightnessLevel;
     display_brightness_t brightnessCount;
+    display_state_t state;
     uint8_t character;
     bool isActiveLow;
     bool isEnabled;
+    bool blinkIsEnabled;
 
 } display_t;
 
@@ -105,10 +108,10 @@ static const uint8_t seven_seg_digits_decode_gfedcba[78]= {
 static display_t displays[] = 
 {
 
- {2, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true},
- {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true},
- {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true},
- {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, EMPTY_DISPLAY, false, true}
+ {INT_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, DISPLAY_ON, EMPTY_DISPLAY, false, true, true},
+ {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, DISPLAY_ON, EMPTY_DISPLAY, false, true, true},
+ {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, DISPLAY_ON, EMPTY_DISPLAY, false, true, true},
+ {MAX_DISPLAY_BRIGHTNESS, MAX_DISPLAY_BRIGHTNESS, DISPLAY_ON, EMPTY_DISPLAY, false, true, true}
 
 };
 
@@ -186,6 +189,21 @@ void displayClear(display_id_t id)
     displays[id].character = EMPTY_DISPLAY;
 }
 
+void displayChangeState(display_id_t id, display_state_t state)
+{
+    displays[id].state = state;
+}
+
+void displayWriteWord(char string[])
+{
+    uint8_t size = sizeof(string) / sizeof(string[0]) - 1;
+    
+    for (int i = 0 ; (i < DISPLAY_COUNT) && (i < size) ; i++)
+    {
+        displays[i].character = string[i];
+    }
+}
+
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
@@ -203,12 +221,23 @@ void displayPISR(void)
 	    	displayCount = 0;
 	    }
 
+        if(tickCount % (uint32_t) MS2TICKS(DISPLAY_BLINK_PERIOD_MS) == 0)
+        {
+            for(uint8_t i = 0 ; i < DISPLAY_COUNT ; i++)
+            {
+                if(displays[i].state == DISPLAY_BLINK)
+                {
+                    displays[i].blinkIsEnabled = !displays[i].blinkIsEnabled;
+                }
+            }
+        }
+
 		gpioWrite(DISPLAY_DECODER_PIN_A, (displayCount & 0x1));
 		gpioWrite(DISPLAY_DECODER_PIN_B, (displayCount & 0x2));
 
 		if (displays[displayCount].brightnessCount == 0)
 		{
-			if (displays[displayCount].isEnabled)
+			if (displays[displayCount].isEnabled && (displays[displayCount].blinkIsEnabled || (displays[displayCount].state != DISPLAY_BLINK) ) )
 			{
 					uint8_t character = displays[displayCount].character;
 
