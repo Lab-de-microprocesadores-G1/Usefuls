@@ -211,7 +211,7 @@ void displayWriteWord(char string[])
 
     for (int i = 0 ; (i < DISPLAY_COUNT) && (i < size) ; i++)
     {
-        displays[i].character = string[i];
+        displays[i].character = to7seg(string[i]);
     }
 }
 
