@@ -8,7 +8,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 #include "encoder.h"
-// #include "../../board/board.h"
+#include "../../../board/board.h"
 #include "../../MCAL/gpio/gpio.h"
 #include "MK64F12.h"
 #include <stdio.h>
@@ -16,6 +16,21 @@
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
+#define ENCODER0_A ENCODER0_A_PIN
+#define ENCODER0_B ENCODER0_B_PIN
+//* To add a new encoder, set it's pins in board.h like this:
+//* ENCODER1_A_PIN PORTNUM2PIN(port,pinNumber)
+//* ENCODER1_B_PIN PORTNUM2PIN(port,pinNumber)
+
+//* And then here like:
+//* #define ENCODER1_A ENCODER1_A_PIN
+//* #define ENCODER1_B ENCODER1_B_PIN
+
+#define ISR_DEVELOPMENT_MODE
+#ifdef ISR_DEVELOPMENT_MODE
+#define ENCODER_ISR_DEV ENCODER_ISR_DEV_PIN
+#endif
+
 #define ENCODER_ISR_HANDLER(i,s) \
       void encoderISRHandler_##i_##s(void) { \
           FSMCycle(i,s); \
@@ -23,16 +38,10 @@
 #define ENCODER_ISR_HANDLER_NAME(i,s) encoderISRHandler_##i_##s
 #define ENCODER_ISR_HANDLER_PROTOTYPE(i,s) static void encoderISRHandler_##i_##s(void);
 
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-#define ENCODER0_A_PIN PORTNUM2PIN(PC,2)
-#define ENCODER0_B_PIN PORTNUM2PIN(PC,3)
-//* To add a new encoder:
-//* ENCODER1_A_PIN PORTNUM2PIN(port,pinNumber)
-//* ENCODER1_B_PIN PORTNUM2PIN(port,pinNumber)
-
-
 typedef void (*encoder_act_routine_t)(encoder_id_t);
 
 typedef enum uint8_t {
@@ -108,9 +117,9 @@ extern encoder_state_t RCC3[];
 
 
 static encoder_t encodersList[ENCODER_COUNT] = {
-  {ENCODER0_A_PIN, ENCODER0_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(0,A), ENCODER_ISR_HANDLER_NAME(0,B)}
+  {ENCODER0_A, ENCODER0_B, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(0,A), ENCODER_ISR_HANDLER_NAME(0,B)}
   //* To add a new encoder:
-  //* {ENCODER1_A_PIN, ENCODER1_B_PIN, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(1,A), ENCODER_ISR_HANDLER_NAME(1,B)}
+  //* {ENCODER1_A, ENCODER1_B, IDLE, false, NULL, NULL, ENCODER_ISR_HANDLER_NAME(1,A), ENCODER_ISR_HANDLER_NAME(1,B)}
 };
 
 // Defining FSM.
@@ -162,6 +171,11 @@ void encoderInit(void)
   {
     initSingleEncoder(id);
   }
+
+  #ifdef ISR_DEVELOPMENT_MODE
+  gpioWrite(ENCODER_ISR_DEV, LOW);
+  gpioMode(ENCODER_ISR_DEV, OUTPUT);
+  #endif
 }
 
 void registerCallbacks(encoder_id_t id, encoder_callback_t clockwiseCallback, encoder_callback_t counterClockwiseCallback)
@@ -244,6 +258,10 @@ void initSingleEncoder(encoder_id_t id)
 
 void FSMCycle(encoder_id_t id, encoder_signal_t signal)
 {
+  #ifdef ISR_DEVELOPMENT_MODE
+  gpioWrite(ENCODER_ISR_DEV, HIGH);
+  #endif
+
   if (encodersList[id].enabled)
   {
     encoder_fsm_event_t ev = getEvent(id, signal);
@@ -257,6 +275,10 @@ void FSMCycle(encoder_id_t id, encoder_signal_t signal)
     (*stateIterator->actionRoutine)(id);
     encodersList[id].currentState = stateIterator->nextState;
   }
+  
+  #ifdef ISR_DEVELOPMENT_MODE
+  gpioWrite(ENCODER_ISR_DEV, LOW);
+  #endif
 }
 
 encoder_fsm_event_t getEvent(encoder_id_t id, encoder_signal_t signal)
