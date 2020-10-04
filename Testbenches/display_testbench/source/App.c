@@ -36,10 +36,7 @@ void App_Init (void)
 {
     displayInit();
 
-    displayWrite(DISPLAY_1, 'b');
-    displayWrite(DISPLAY_2, 'O');
-    displayWrite(DISPLAY_3, 'C');
-    displayWrite(DISPLAY_4, 'A');
+    displayWriteWord("HOLA");
 }
 
 /* Called repeatedly in an infinit loop */
