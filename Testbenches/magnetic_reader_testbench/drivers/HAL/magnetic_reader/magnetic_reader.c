@@ -79,6 +79,9 @@ void magneticReaderInit(void)
 	gpioMode(MAG_CARD_ENABLE, INPUT);
 	gpioMode(MAG_CARD_DATA, INPUT);
 	gpioMode(MAG_CARD_CLK, INPUT);
+	gpioMode(PIN_TEST1, OUTPUT);
+	gpioMode(PIN_TEST2, OUTPUT);
+	gpioMode(PIN_TEST3, OUTPUT);
 
 	// Configure IRQ's
 	gpioIRQ(MAG_CARD_ENABLE, GPIO_IRQ_MODE_INTERRUPT_BOTH_EDGES, edgesHandler);
@@ -101,6 +104,7 @@ void magneticReaderSubscribe(void (*dataCb) (uint8_t data[]), void (*errorCb) (v
 
 static void edgesHandler(void)
 {
+	gpioWrite(PIN_TEST1, true);
 	bool state;
 	state = gpioRead(MAG_CARD_ENABLE);
 	if(state)
@@ -111,6 +115,7 @@ static void edgesHandler(void)
 	{
 		cardSwipe();
 	}
+	gpioWrite(PIN_TEST1, false);
 }
 
 static void cardSwipe(void)
@@ -125,8 +130,10 @@ static void cardSwipeStopped(void)
 		enableActive = false;
 		restart = true;
 
+		gpioWrite(PIN_TEST3, true);
 		if(!dataParse())
 		{
+			gpioWrite(PIN_TEST3, false);
 		    getCardNumber();
 		    dataCallback(finalId);
 		    clearData();
@@ -140,6 +147,7 @@ static void cardSwipeStopped(void)
 
 static void dataRead(void)
 {
+	gpioWrite(PIN_TEST2, true);
 	static uint32_t bitCounter = 0;
 	if(restart)
 	{
@@ -155,6 +163,7 @@ static void dataRead(void)
 	{
 		bitCounter = 0;
 	}
+	gpioWrite(PIN_TEST2, false);
 }
 
 static bool getUsefulData(void)

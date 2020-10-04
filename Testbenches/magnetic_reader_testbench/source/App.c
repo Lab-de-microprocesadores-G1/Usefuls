@@ -57,10 +57,10 @@ static void dataCallback(uint8_t array[])
 {
 	uint64_t i = 0;
 	gpioWrite(PIN_LED_GREEN, true);
-	for(i=0; i<1000000;i++)
-	{
-
-	}
+//	for(i=0; i<1000000;i++)
+//	{
+//
+//	}
 	gpioWrite(PIN_LED_GREEN, false);
 	gpioWrite(PIN_LED_RED, true);
 }
@@ -69,10 +69,10 @@ static void errorCallback(void)
 {
 	uint64_t i = 0;
 	gpioWrite(PIN_LED_RED, true);
-	for(i=0; i<1000000;i++)
-	{
-
-	}
+//	for(i=0; i<1000000;i++)
+//	{
+//
+//	}
 	gpioWrite(PIN_LED_RED, false);
 	gpioWrite(PIN_LED_GREEN, true);
 }

@@ -20,9 +20,14 @@
 /***** BOARD defines **********************************************************/
 
 // On Board User Magnetic Card 
-#define PIN_MAG_CARD_ENABLE PORTNUM2PIN(PB, 20)  // PTC3
-#define PIN_MAG_CARD_DATA   PORTNUM2PIN(PB, 9)  // PTA1
+#define PIN_MAG_CARD_ENABLE PORTNUM2PIN(PB, 9)  // PTC3
+#define PIN_MAG_CARD_DATA   PORTNUM2PIN(PB, 20)  // PTA1
 #define PIN_MAG_CARD_CLK    PORTNUM2PIN(PB, 23)  // PTA2
+
+//Debug
+#define PIN_TEST1			PORTNUM2PIN(PC, 3)
+#define PIN_TEST2			PORTNUM2PIN(PC, 5)
+#define PIN_TEST3			PORTNUM2PIN(PC, 7)
 
 // On Board User LEDs
 #define PIN_LED_RED         PORTNUM2PIN(PB, 22) // PTB22
