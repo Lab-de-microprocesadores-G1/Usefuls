@@ -197,7 +197,7 @@ void displayChangeState(display_id_t id, display_state_t state)
 void displayWriteWord(char string[])
 {
     uint8_t size = sizeof(string) / sizeof(string[0]) - 1;
-    
+
     for (int i = 0 ; (i < DISPLAY_COUNT) && (i < size) ; i++)
     {
         displays[i].character = string[i];
