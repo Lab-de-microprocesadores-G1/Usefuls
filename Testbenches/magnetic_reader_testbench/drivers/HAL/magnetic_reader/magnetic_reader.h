@@ -22,6 +22,13 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
+// Magnetic card structure
+typedef struct {
+	uint8_t PAN[19];
+	uint8_t PANLength;
+	uint8_t extraData[7];
+	uint8_t discretionaryData[8];
+} mag_card_t;
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
@@ -41,7 +48,7 @@ void magneticReaderInit(void);
 * @param dataCb callback to get new card event.
 * @param errorCb callback to check for error.
 */
-void magneticReaderSubscribe(void (*dataCb) (uint8_t data[]), void (*errorCb) (void));
+void magneticReaderSubscribe(void (*dataCb) (mag_card_t data), void (*errorCb) (void));
 
 
 
