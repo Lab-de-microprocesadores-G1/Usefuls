@@ -30,9 +30,9 @@ typedef enum uint8_t{
 } display_id_t;
 
 typedef enum{
-    MAX_DISPLAY_BRIGHTNESS = 0,
-    INT_DISPLAY_BRIGHTNESS = 2,
-    MIN_DISPLAY_BRIGHTNESS = 3
+    MAX_DISPLAY_BRIGHTNESS,
+    INT_DISPLAY_BRIGHTNESS,
+    MIN_DISPLAY_BRIGHTNESS
 
 }display_brightness_t;
 
