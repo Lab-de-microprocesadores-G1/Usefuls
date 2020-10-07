@@ -88,7 +88,7 @@ typedef enum
 void        FTMInit                           (void);
 void        FTMInitAsOverflow                 (void);
 void        FTMInitAsOutputCompare            (void);
-void        FTMInitAsInputCompare             (void);
+void        FTMInitAsInputCapture             (void);
 void        FTMInitAsPWM                      (void);
 
 void        FTM_SetPrescaler                  (FTM_t, FTM_Prescal_t);
