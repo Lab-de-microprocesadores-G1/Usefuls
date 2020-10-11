@@ -1,5 +1,5 @@
 # Usefuls
-## Project Resources
+## Resources
 Code resources, libraries, drivers, and more... in the file structure of an usual nxp K64F project
 
 ## Templates
