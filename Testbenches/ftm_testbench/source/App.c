@@ -8,11 +8,6 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "drivers/HAL/magnetic_reader/magnetic_reader.h"
-
-// Estos no corresponden, solo para el test-bench
-#include "board/board.h"
-#include "drivers/MCAL/gpio/gpio.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -23,10 +18,18 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-void pressCallback(void);
-void releaseCallback(void);
-void typematicCallback(void);
-void lkpCallback(void);
+
+/*******************************************************************************
+ * VARIABLES TYPES DEFINITIONS
+ ******************************************************************************/
+// typedef int my_int;
+
+
+/*******************************************************************************
+ * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
+ ******************************************************************************/
+// static int myVar;
+
 
 /*******************************************************************************
  *******************************************************************************
@@ -34,53 +37,24 @@ void lkpCallback(void);
  *******************************************************************************
  ******************************************************************************/
 
-/* Función que se llama 1 vez, al comienzo del programa */
+/* Called once at the beginning of the program */
 void App_Init (void)
 {
-    gpioMode(PIN_LED_BLUE, OUTPUT);
-    gpioMode(PIN_LED_RED, OUTPUT);
-	gpioToggle(PIN_LED_BLUE);
-	gpioToggle(PIN_LED_RED);
-    buttonInit();
-    buttonSubscribe(BUTTON_1, BUTTON_PRESS, pressCallback);
-    buttonSubscribe(BUTTON_1, BUTTON_RELEASE, releaseCallback);
-    buttonSubscribe(BUTTON_1, BUTTON_TYPEMATIC, typematicCallback);
-    buttonSubscribe(BUTTON_1, BUTTON_LKP, lkpCallback);
+    // Driver initialisations.
 }
 
-/* Función que se llama constantemente en un ciclo infinito */
+/* Called repeatedly in an infinit loop */
 void App_Run (void)
 {
-
+    // Things to do in an infinit loop.
 }
+
 
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-
-void pressCallback(void)
-{
-	gpioToggle(PIN_LED_BLUE);
-}
-
-void releaseCallback(void)
-{
-	gpioWrite(PIN_LED_BLUE, HIGH);
-	gpioWrite(PIN_LED_RED, HIGH);
-}
-
-void lkpCallback(void)
-{
-	gpioToggle(PIN_LED_BLUE);
-}
-
-void typematicCallback(void)
-{
-	gpioToggle(PIN_LED_RED);
-}
-
 
 
 /*******************************************************************************

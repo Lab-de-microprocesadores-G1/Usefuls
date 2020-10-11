@@ -11,6 +11,7 @@
 
 /* Include drivers */
 #include "drivers/MCAL/gpio/gpio.h"
+#include "drivers/HAL/encoder/encoder.h"
 #include "board/board.h"
 
 
@@ -22,13 +23,16 @@
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
-// static void fun(void);
+static void rotate_clockwise(void);
+static void rotate_counter_clockwise(void);
+static void change_colour(void);
 
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
  ******************************************************************************/
-typedef enum {RED, GREEN, BLUE} colour_t;
+typedef enum {RED, GREEN, BLUE};
+typedef int8_t colour_t;
 
 
 /*******************************************************************************
@@ -50,9 +54,15 @@ void App_Init (void)
 	gpioWrite(PIN_LED_RED, HIGH);
 	gpioWrite(PIN_LED_GREEN, HIGH);
 	gpioWrite(PIN_LED_BLUE, HIGH);
+
     gpioMode(PIN_LED_RED, OUTPUT);
     gpioMode(PIN_LED_GREEN, OUTPUT);
     gpioMode(PIN_LED_BLUE, OUTPUT);
+
+    encoderInit();
+    registerCallbacks(ENCODER_0, rotate_clockwise, rotate_counter_clockwise);
+
+    gpioWrite(PIN_LED_RED, LOW);
 }
 
 /* Called repeatedly in an infinit loop */
@@ -70,19 +80,19 @@ void App_Run (void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-static void rotate_clockwise(void)
+void rotate_clockwise(void)
 {
 	colour++;
 	colour_changed = true;
 }
 
-static void rotate_counter_clockwise(void)
+void rotate_counter_clockwise(void)
 {
 	colour--;
 	colour_changed = true;
 }
 
-static void change_colour(void)
+void change_colour(void)
 {
 	colour_changed = false;
 	if (colour > 2)

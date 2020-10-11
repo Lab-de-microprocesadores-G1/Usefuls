@@ -42,7 +42,6 @@
 #define DISPLAY_DECODER_A       DISPLAY_DECODER_PIN_A  //! decoder MSB (definir adecuadamente)
 #define DISPLAY_DECODER_B       DISPLAY_DECODER_PIN_B  //! decoder LSB (definir adecuadamente)
 
-#define ISR_DEVELOPMENT_MODE
 #ifdef ISR_DEVELOPMENT_MODE
 #define DISPLAY_ISR_DEV DISPLAY_ISR_DEV_PIN
 #endif
@@ -149,7 +148,7 @@ void displayInit(void)
     }
 
     // PISR init (SYSTICK)
-    SysTick_Init(displayPISR); // periodic interruption registration
+    systickInit(displayPISR); // periodic interruption registration
 
     #ifdef ISR_DEVELOPMENT_MODE
     gpioWrite(DISPLAY_ISR_DEV, LOW);

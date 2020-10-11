@@ -28,10 +28,25 @@
 #define PIN_SW2         PORTNUM2PIN(PC, 6)  // PTC6
 #define PIN_SW3         PORTNUM2PIN(PA, 4)  // PTA4
 
+#define SW2_ACTIVE		LOW
+#define SW3_ACTIVE		LOW
+
 // Active Status
 #define LED_ACTIVE      LOW
 
-#define SW_ACTIVE       LOW
+// Display pins
+#define DISPLAY_SEGA_PIN            PORTNUM2PIN(PC,5)   //! (definir adecuadamente)
+#define DISPLAY_SEGB_PIN            PORTNUM2PIN(PC,7)   //! (definir adecuadamente)
+#define DISPLAY_SEGC_PIN            PORTNUM2PIN(PC,0)   //! (definir adecuadamente)
+#define DISPLAY_SEGD_PIN            PORTNUM2PIN(PC,9)   //! (definir adecuadamente)
+#define DISPLAY_SEGE_PIN            PORTNUM2PIN(PC,8)   //!  (definir adecuadamente)
+#define DISPLAY_SEGF_PIN            PORTNUM2PIN(PC,1)   //! (definir adecuadamente)
+#define DISPLAY_SEGG_PIN            PORTNUM2PIN(PB,19)  //! (definir adecuadamente)
+#define DISPLAY_DPOINT_PIN          PORTNUM2PIN(PB,18)  //! (definir adecuadamente)
+#define DISPLAY_DECODER_PIN_A       PORTNUM2PIN(PC,3)   //! decoder MSB (definir adecuadamente)
+#define DISPLAY_DECODER_PIN_B       PORTNUM2PIN(PC,2)   //! decoder LSB (definir adecuadamente)
+#define DISPLAY_ISR_DEV_PIN         PORTNUM2PIN(PA,2)
+    
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE

@@ -13,7 +13,7 @@
 #include "drivers/MCAL/gpio/gpio.h"
 #include "drivers/MCAL/systick/systick.h"
 
-#include "board/board.h"
+#include "../../../board/board.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE

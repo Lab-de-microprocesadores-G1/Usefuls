@@ -22,7 +22,8 @@
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
-
+static void dataCallback(uint8_t array[]);
+static void errorCallback(void);
 
 /*******************************************************************************
  *******************************************************************************
@@ -34,6 +35,11 @@
 void App_Init (void)
 {
     magneticReaderInit();
+    magneticReaderSubscribe(dataCallback, errorCallback);
+    gpioMode(PIN_LED_GREEN, OUTPUT);
+    gpioToggle(PIN_LED_RED);
+    gpioToggle(PIN_LED_GREEN);
+    gpioMode(PIN_LED_RED, OUTPUT);
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
@@ -47,7 +53,29 @@ void App_Run (void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+static void dataCallback(uint8_t array[])
+{
+	uint64_t i = 0;
+	gpioWrite(PIN_LED_GREEN, true);
+//	for(i=0; i<1000000;i++)
+//	{
+//
+//	}
+	gpioWrite(PIN_LED_GREEN, false);
+	gpioWrite(PIN_LED_RED, true);
+}
 
+static void errorCallback(void)
+{
+	uint64_t i = 0;
+	gpioWrite(PIN_LED_RED, true);
+//	for(i=0; i<1000000;i++)
+//	{
+//
+//	}
+	gpioWrite(PIN_LED_RED, false);
+	gpioWrite(PIN_LED_GREEN, true);
+}
 
 /*******************************************************************************
  ******************************************************************************/

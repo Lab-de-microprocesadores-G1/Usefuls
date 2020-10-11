@@ -1,12 +1,13 @@
 /*******************************************************************************
   @file     encoder.c
-  @brief    [...]
+  @brief    Rotative encoder driver
   @author   G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
+
 #include "encoder.h"
 #include "../../../board/board.h"
 #include "../../MCAL/gpio/gpio.h"
@@ -26,7 +27,6 @@
 //* #define ENCODER1_A ENCODER1_A_PIN
 //* #define ENCODER1_B ENCODER1_B_PIN
 
-#define ISR_DEVELOPMENT_MODE
 #ifdef ISR_DEVELOPMENT_MODE
 #define ENCODER_ISR_DEV ENCODER_ISR_DEV_PIN
 #endif
@@ -233,9 +233,6 @@ void enableEncoder(encoder_id_t id)
   
   encodersList[id].enabled = true;
 }
-
-
-
 
 /*******************************************************************************
  *******************************************************************************

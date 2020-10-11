@@ -38,7 +38,6 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-
 static void edgesHandler(void);
 static void cardSwipe(void);
 static void cardSwipeStopped(void);
@@ -46,9 +45,8 @@ static void dataRead(void);
 static bool getUsefulData(void);
 static uint16_t searchSS(void);
 static uint16_t searchES(uint16_t ss);
-static uint16_t searchFS(uint16_t ss);
 static bool dataParse(void);
-static mag_card_t getCardNumber(void);
+static void getCardNumber(void);
 static void clearData(void);
 
 /*******************************************************************************
@@ -59,15 +57,13 @@ static void clearData(void);
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static bool     	enableActive;
-static bool     	restart = false;
-static uint8_t 		cardData[DATA_LENGTH*2];
-static uint8_t		usefulCardData[DATA_LENGTH];
-static uint16_t		ss;
-static uint16_t		fs;
-static uint16_t		es;
+static bool     enableActive;
+static bool     restart = false;
+static uint8_t 	cardData[DATA_LENGTH*2];
+static uint8_t	usefulCardData[DATA_LENGTH];
+static uint8_t 	finalId[40];
 
-static void 	(*dataCallback)(mag_card_t data);
+static void 	(*dataCallback)(uint8_t data[]);
 static void 	(*errorCallback)(void);
 
 /*******************************************************************************
@@ -83,14 +79,12 @@ void magneticReaderInit(void)
 	gpioMode(MAG_CARD_DATA, INPUT);
 	gpioMode(MAG_CARD_CLK, INPUT);
 
-
 	// Configure IRQ's
 	gpioIRQ(MAG_CARD_ENABLE, GPIO_IRQ_MODE_INTERRUPT_BOTH_EDGES, edgesHandler);
 	gpioIRQ(MAG_CARD_CLK, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, dataRead);
-
 }
 
-void magneticReaderSubscribe(void (*dataCb) (mag_card_t data), void (*errorCb) (void))
+void magneticReaderSubscribe(void (*dataCb) (uint8_t data[]), void (*errorCb) (void))
 {
 	dataCallback = dataCb;
 	errorCallback = errorCb;
@@ -131,9 +125,8 @@ static void cardSwipeStopped(void)
 
 		if(!dataParse())
 		{
-			static mag_card_t data;
-		    data = getCardNumber();
-		    dataCallback(data);
+		    getCardNumber();
+		    dataCallback(finalId);
 		    clearData();
 		}
 		else
@@ -166,10 +159,9 @@ static bool getUsefulData(void)
 {
 	uint8_t  i = 0;
 	bool error = false;
-	ss = searchSS();
-	fs = searchFS(ss);
-	es = searchES(ss);
-	if(es == 0 || ss == 0 || fs == 0)
+	uint16_t ss = searchSS();
+	uint16_t es = searchES(ss);
+	if(es == 0 || ss == 0)
 	{
 		error = true;
 	}
@@ -206,20 +198,6 @@ static uint16_t searchSS(void)
 		}
 	}
 	return false;
-}
-
-static uint16_t searchFS(uint16_t ss)
-{
-	uint16_t i, fs = 0;
-		for(i = 0; i < 40; i++)
-		{
-			fs = cardData[i * BITS_PER_CHAR + ss] + (cardData[i * BITS_PER_CHAR + ss + 1] << 1) + (cardData[i * BITS_PER_CHAR + ss + 2] << 2) + (cardData[i * BITS_PER_CHAR + ss + 3] << 3);
-			if(fs == 0xD)
-			{
-				return i * BITS_PER_CHAR + ss;
-			}
-		}
-		return false;
 }
 
 static uint16_t searchES(uint16_t ss)
@@ -264,28 +242,13 @@ static bool dataParse(void)
     return error;
 }
 
-static mag_card_t getCardNumber(void)
+static void getCardNumber(void)
 {
 	uint8_t i;
-	static mag_card_t	data;
-	data.PANLength = (fs - ss) / BITS_PER_CHAR - 1; //-1 because of the ss
-
-	for(i = 0; i <= data.PANLength; i++)
+	for(i = 0; i < 40; i++)
 	{
-		if(i != 0)
-		{
-			data.PAN[i - 1] =  usefulCardData[i * BITS_PER_CHAR + 0] + (usefulCardData[i * BITS_PER_CHAR + 1] << 1) + (usefulCardData[i * BITS_PER_CHAR + 2] << 2) + (usefulCardData[i * BITS_PER_CHAR + 3] << 3);
-		}
+		finalId[i] =  usefulCardData[i * BITS_PER_CHAR + 0] + (usefulCardData[i * BITS_PER_CHAR + 1] << 1) + (usefulCardData[i * BITS_PER_CHAR + 2] << 2) + (usefulCardData[i * BITS_PER_CHAR + 3] << 3);
 	}
-	for(i = 0; i < 7; i++)
-	{
-		data.extraData[i] =  usefulCardData[(i + data.PANLength + 2) * BITS_PER_CHAR + 0] + (usefulCardData[(i + data.PANLength + 2) * BITS_PER_CHAR + 1] << 1) + (usefulCardData[(i + data.PANLength + 2) * BITS_PER_CHAR + 2] << 2) + (usefulCardData[(i + data.PANLength + 2) * BITS_PER_CHAR + 3] << 3);
-	}
-	for(i = 0; i < 8; i++)
-	{
-		data.discretionaryData[i] =  usefulCardData[(i + data.PANLength + 9) * BITS_PER_CHAR + 0] + (usefulCardData[(i + data.PANLength + 9) * BITS_PER_CHAR + 1] << 1) + (usefulCardData[(i + data.PANLength + 9) * BITS_PER_CHAR + 2] << 2) + (usefulCardData[(i + data.PANLength + 9) * BITS_PER_CHAR + 3] << 3);
-	}
-	return data;
 }
 
 static void clearData(void)

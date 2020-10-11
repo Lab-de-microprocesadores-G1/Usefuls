@@ -11,7 +11,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "drivers/HAL/timer/timer.h"
+#include "../timer/timer.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE

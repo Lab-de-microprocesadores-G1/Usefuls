@@ -7,7 +7,7 @@
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
-
+#include "drivers/HAL/display/display.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -34,13 +34,15 @@
 /* Called once at the beginning of the program */
 void App_Init (void)
 {
-    // Driver initialisations.
+    displayInit();
+
+    displayWriteWord("HOLA");
 }
 
 /* Called repeatedly in an infinit loop */
 void App_Run (void)
 {
-    // Things to do in an infinit loop.
+
 }
 
 
