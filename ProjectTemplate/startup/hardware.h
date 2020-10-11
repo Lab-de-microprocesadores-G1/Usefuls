@@ -1,7 +1,7 @@
-/***************************************************************************//**
+/*******************************************************************************
   @file     hardware.h
   @brief
-  @author   Nicolás Magliola
+  @author   Nicolás Magliola, Lucas A. Kammann (modifications)
  ******************************************************************************/
 
 #ifndef _HARDWARE_H_
@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -28,10 +27,9 @@
 #define __FOREVER__     for(;;)
 #define __ISR__         void __attribute__ ((interrupt))
 
-void hw_Init (void);
-
-void hw_EnableInterrupts (void);
-void hw_DisableInterrupts (void);
+void hardwareInit (void);
+void hardwareEnableInterrupts (void);
+void hardwareDisableInterrupts (void);
 
 /* See IRQn_Type for IRQn definitions
  * Example: NVIC_EnableIRQ(SysTick_IRQn);

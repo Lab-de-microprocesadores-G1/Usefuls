@@ -49,7 +49,7 @@
 void fsmCycle(state_t* state, void* event)
 {
 	// Casting to the standard event handled
-	event_id_t newEvent = *(event_id_t*)event;
+	event_id_t newEvent = EVENT_ID(event);
 
 	// Searching the edge with this event
 	state_t currentState = *state;
@@ -63,6 +63,11 @@ void fsmCycle(state_t* state, void* event)
 
 	// Go to the next state
 	*state = currentState->nextState;
+}
+
+void __do_nothing__(void* event)
+{
+
 }
 
 /*******************************************************************************

@@ -8,28 +8,32 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+// #include "superpower.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+// #define SOME_CONSTANT    20
+// #define MACRO(x)         (x)
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
+// static void privateFunction(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
  ******************************************************************************/
-// typedef int my_int;
 
+// typedef int  my_int_t;
 
 /*******************************************************************************
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
-// static int myVar;
 
+// static int myVar;
 
 /*******************************************************************************
  *******************************************************************************
@@ -38,17 +42,16 @@
  ******************************************************************************/
 
 /* Called once at the beginning of the program */
-void App_Init (void)
+void appInit (void)
 {
-    // Driver initialisations.
+    // Application initialisation, drivers, etc...
 }
 
-/* Called repeatedly in an infinit loop */
-void App_Run (void)
+/* Called repeatedly in an infinite loop */
+void appRun (void)
 {
-    // Things to do in an infinit loop.
+    // Application iterative tasks, every loop runs this function
 }
-
 
 /*******************************************************************************
  *******************************************************************************

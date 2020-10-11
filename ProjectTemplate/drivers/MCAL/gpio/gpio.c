@@ -27,7 +27,7 @@
 #define SLEWRATE_K64F 			    PORT_PCR_SRE_MASK
 #define OPENDRAIN_K64F			    PORT_PCR_ODE_MASK
 #define LOCK_K64F				    PORT_PCR_LK_MASK
-#define FILTER_K64F				    PORT_PCR_PFE_MASK
+#define GPIO_FILTER_K64F			PORT_PCR_PFE_MASK
 #define DRIVESTRENGTH_K64F		  	PORT_PCR_DSE_MASK
 
 
@@ -147,7 +147,7 @@ void gpioMode (pin_t pin, uint32_t mode)
 
 	// K64F converting mode flags
 	mode |= SETTING(setting, INPUT) 	| SETTING(setting, OUTPUT) 		| SETTING(setting, PULLDOWN) 	|  SETTING(setting, PULLUP);
-	mode |= SETTING(setting, SLEWRATE) 	| SETTING(setting, OPENDRAIN) 	| SETTING(setting, LOCK) 		|  SETTING(setting, FILTER);
+	mode |= SETTING(setting, SLEWRATE) 	| SETTING(setting, OPENDRAIN) 	| SETTING(setting, LOCK) 		|  SETTING(setting, GPIO_FILTER);
 
 	// Setting MUX to GPIO alternative.
 	ports[PIN2PORT(pin)]->PCR[PIN2NUM(pin)] = ( GPIO_MASK | ( mode & ~TYPE_MASK ) );

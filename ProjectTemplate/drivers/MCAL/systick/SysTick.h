@@ -1,7 +1,7 @@
-/***************************************************************************//**
-  @file     SysTick.h
-  @brief    SysTick driver
-  @author   Nicolas Magliola
+/*******************************************************************************
+  @file     systick.h
+  @brief    Systick simple timer driver
+  @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
 #ifndef _SYSTICK_H_
@@ -33,11 +33,11 @@
  ******************************************************************************/
 
 /**
- * @brief Initialize SysTic driver
+ * @brief Initialise SysTic driver
  * @param funcallback Function to be call every SysTick
  * @return Initialization and registration succeed
  */
-bool SysTick_Init (void (*funcallback)(void));
+bool systickInit (void (*funcallback)(void));
 
 
 /*******************************************************************************

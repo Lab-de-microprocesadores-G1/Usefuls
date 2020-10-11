@@ -16,15 +16,6 @@
 #include <stdlib.h>
 
 /*******************************************************************************
- * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
- ******************************************************************************/
-
-#define END_OF_STATE						(uint32_t)0xFFFFFFFFF
-
-// All states MUST have a default edge!
-#define DEFAULT_EDGE(state, callback)		{END_OF_STATE, (state), (callback)}
-
-/*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
@@ -57,6 +48,27 @@ struct edge {
     state_t       	nextState;
     action_t       	action;
 };
+
+/*******************************************************************************
+ * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
+ ******************************************************************************/
+
+// Definition of the end of the state, when no edge found for the current event
+#define END_OF_STATE						(uint32_t)0xFFFFFFFFF
+
+// Definition of an empty action routine, do nothing
+void 	__do_nothing__(void* event);
+#define DO_NOTHING	(__do_nothing__)
+
+// Definition of the default state
+#define DEFAULT_EDGE(state, callback)			{END_OF_STATE, (state), (callback)}
+#define DEFAULT_NO_ACTION_EDGE(state)			{END_OF_STATE, (state), DO_NOTHING}
+
+// Get the ID of an event's pointer
+#define EVENT_ID(ev) 							(*(event_id_t*)(ev))
+
+// Verify current state of the machine state
+#define IS_CURRENT_STATE(fsm, state)			((fsm) == state)
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE

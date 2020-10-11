@@ -25,6 +25,8 @@
 //
 // #define QUEUE_DEVELOPMENT_MODE
 
+#define QUEUE_STANDARD_MAX_SIZE		30
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/

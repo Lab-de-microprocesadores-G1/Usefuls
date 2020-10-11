@@ -21,9 +21,10 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define NO_EVENTS				NULL
-#define	MAX_EVENT_GENERATORS	15
-#define	OUT_OF_GENERATORS		MAX_EVENT_GENERATORS
+#define NO_EVENTS						NULL
+#define	MAX_EVENT_GENERATORS			15
+#define	OUT_OF_GENERATORS				MAX_EVENT_GENERATORS
+#define EVENT_QUEUE_STANDARD_MAX_SIZE	QUEUE_STANDARD_MAX_SIZE
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -83,8 +84,7 @@ bool setEnable(event_queue_t* queue, generator_id_t id, bool enable);
 
 /**
  * @brief Returns next event from the queue, returns NO_EVENTS if there are
- * 		  no events. REMEMBER to copy the event!
- * 		  ¡The persistence of the event is temporary! Use it at your own risk.
+ * 		  no events.
  * @param queue			Pointer to the Event Queue instance
  */
 void* getNextEvent(event_queue_t* queue);
