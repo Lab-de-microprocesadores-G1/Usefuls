@@ -68,7 +68,7 @@ static const uint8_t 	ftmIrqs[] = FTM_IRQS;
 // The one and only one look up table by Nico "El Rafa" Trozzo
 static const pin_t		ftmChannelPins[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 	//	Channel 0			Channel 1			Channel 2			Channel 3		Channel 4			Channel 5			Channel 6			Channel 7
-	{ PORTNUM2PIN(PC,1),  PORTNUM2PIN(PA,4),  PORTNUM2PIN(PC,3), PORTNUM2PIN(PC,4), PORTNUM2PIN(PD,4), PORTNUM2PIN(PD,5), PORTNUM2PIN(PD,6)	, PORTNUM2PIN(PD,7)  },	// FTM0
+	{ PORTNUM2PIN(PC,1),  PORTNUM2PIN(PA,4),  PORTNUM2PIN(PA,5), PORTNUM2PIN(PC,4), PORTNUM2PIN(PD,4), PORTNUM2PIN(PD,5), PORTNUM2PIN(PD,6)	, PORTNUM2PIN(PD,7)  },	// FTM0
 	{ PORTNUM2PIN(PA,12), PORTNUM2PIN(PA,13), 0				   , 0				  , 0				 , 0			   	, 0				   	, 0				     }, // FTM1
 	{ PORTNUM2PIN(PB,18), PORTNUM2PIN(PB,19), 0				   , 0				  , 0				 , 0			   	, 0				   	, 0				     }, // FTM2
 	{ PORTNUM2PIN(PD,0),  PORTNUM2PIN(PD,1),  PORTNUM2PIN(PD,2), PORTNUM2PIN(PD,3), PORTNUM2PIN(PC,8), PORTNUM2PIN(PC,9), PORTNUM2PIN(PC,10), PORTNUM2PIN(PC,11) }  // FTM3
