@@ -11,3 +11,4 @@ Debug
 /.metadata
 /FreeRTOS_TAD_logs
 FreeRTOS_TAD_logs
+*.launch
