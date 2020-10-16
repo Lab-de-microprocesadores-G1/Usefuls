@@ -8,6 +8,10 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include "board.h"
+
+#include "drivers/MCAL/gpio/gpio.h"
+#include "drivers/MCAL/ftm/ftm.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -40,7 +44,12 @@
 /* Called once at the beginning of the program */
 void App_Init (void)
 {
-    // Driver initialisations.
+	boardInit();
+
+	gpioWrite(PIN_LED_BLUE, !LED_ACTIVE);
+	gpioMode(PIN_LED_BLUE, OUTPUT);
+
+	ftmInit(FTM_INSTANCE_0s);
 }
 
 /* Called repeatedly in an infinit loop */

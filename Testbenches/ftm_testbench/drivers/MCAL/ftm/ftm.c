@@ -60,7 +60,7 @@ static ov_callback		ftmOverflowCallbacks[FTM_INSTANCE_COUNT];
 static ch_callback		ftmChannelCallbacks[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT];
 
 // Pointers to FTM Instances
-static const FTM_Type*	ftmInstances[] = FTM_BASE_PTRS;
+static FTM_Type*	ftmInstances[] = FTM_BASE_PTRS;
 
 // FTMIRQn for NVIC Enabling
 static const uint8_t 	ftmIrqs[] = FTM_IRQS;
@@ -191,8 +191,6 @@ void ftmChannelSubscribe(uint8_t instance, uint8_t channel, void (*callback)(uin
 
 void ftmInputCaptureInit(uint8_t instance, uint8_t channel, ftm_ic_mode_t mode)
 {
-	PORT_Type* ports[] = PORT_BASE_PTRS;
-	
 	// Channel set to input capture on given edge/s
 	ftmInstances[instance]->CONTROLS[channel].CnSC = FTM_CnSC_ELSA(mode == FTM_IC_RISING_EDGE ? 0 : 1) | FTM_CnSC_ELSB(mode == FTM_IC_FALLING_EDGE ? 0 : 1);
 	
@@ -203,8 +201,8 @@ void ftmInputCaptureInit(uint8_t instance, uint8_t channel, ftm_ic_mode_t mode)
 void ftmOutputCompareInit(uint8_t instance, uint8_t channel, ftm_oc_mode_t mode, uint16_t count)
 {
 	// Configuration of the channel as output compare
-	ftmInstances[instance]->CONTROLS[channel]->CnSC = FTM_CnSC_MSB(0) | FTM_CnSC_MSA(1) | FTM_CnSC_ELSB(mode == FTM_OC_TOGGLE ? 0 : 1) | FTM_CnSC_ELSA(mode == FTM_OC_CLEAR ? 0 : 1);
-	ftmInstances[instance]->CONTROLS[channel]->CnV = ftmInstances[instance]->CNT + count;
+	ftmInstances[instance]->CONTROLS[channel].CnSC = FTM_CnSC_MSB(0) | FTM_CnSC_MSA(1) | FTM_CnSC_ELSB(mode == FTM_OC_TOGGLE ? 0 : 1) | FTM_CnSC_ELSA(mode == FTM_OC_CLEAR ? 0 : 1);
+	ftmInstances[instance]->CONTROLS[channel].CnV = ftmInstances[instance]->CNT + count;
 
 	// Pin MUX alternative
 	setFtmChannelMux(instance, channel);
@@ -216,10 +214,10 @@ void ftmOutputCompareInit(uint8_t instance, uint8_t channel, ftm_oc_mode_t mode,
 void ftmPwmInit(uint8_t instance, uint8_t channel, ftm_pwm_mode_t mode, ftm_pwm_alignment_t alignment, uint16_t duty, uint16_t period)
 {
 	// Configure up or up/down counter 
-	ftmInstances[instance]->SC |= FTM_SC_CPWMS(mode == FTM_PWM_CENTER_ALIGNED ? 1 : 0);
+	ftmInstances[instance]->SC |= FTM_SC_CPWMS(alignment == FTM_PWM_CENTER_ALIGNED ? 1 : 0);
 
 	// Configure channel to PWM on the given mode and alignment
-	ftmInstances[instance]->CONTROLS[channel]->CnSC = FTM_CnSC_MSB(1) | FTM_CnSC_ELSB(1) | FTM_CnSC_ELSA(mode == FTM_PWM_LOW_PULSES ? 1 : 0);
+	ftmInstances[instance]->CONTROLS[channel].CnSC = FTM_CnSC_MSB(1) | FTM_CnSC_ELSB(1) | FTM_CnSC_ELSA(mode == FTM_PWM_LOW_PULSES ? 1 : 0);
 	
 	// Enable changes on MOD, CNTIN and CnV
 	ftmInstances[instance]->PWMLOAD |= FTM_PWMLOAD_LDOK(1) | (0x00000001 << channel);
@@ -227,7 +225,7 @@ void ftmPwmInit(uint8_t instance, uint8_t channel, ftm_pwm_mode_t mode, ftm_pwm_
 	// Configure PWM period and duty
 	ftmInstances[instance]->CNTIN = 0;
 	ftmInstances[instance]->MOD = period - 1;
-	ftmInstances[instance]->CONTROLS{channel}->CnV = duty - 1;
+	ftmInstances[instance]->CONTROLS[channel].CnV = duty - 1;
 	
 	// Pin MUX alternative
 	setFtmChannelMux(instance, channel);
@@ -235,7 +233,7 @@ void ftmPwmInit(uint8_t instance, uint8_t channel, ftm_pwm_mode_t mode, ftm_pwm_
 
 void ftmPwmSetDuty(uint8_t instance, uint8_t channel, uint16_t duty)
 {
-	ftmInstances[instance]->CONTROLS[channel]->CnV = duty - 1;		
+	ftmInstances[instance]->CONTROLS[channel].CnV = duty - 1;
 }
 
 /*******************************************************************************
@@ -263,16 +261,16 @@ void FTM_IRQDispatch(uint8_t instance)
 	{
 		for (uint8_t channel = 0; channel < FTM_CHANNEL_COUNT; channel++)
 		{
-			if (ftmInstances[instance]->CONTROLS[channel]->CnSC & FTM_CnSC_CHF_MASK)
+			if (ftmInstances[instance]->CONTROLS[channel].CnSC & FTM_CnSC_CHF_MASK)
 			{
 				// Clear the interruption flag
-				ftmInstances[instance]->CONTROLS[channel]->CnSC &= (~FTM_CnSC_CHF_MASK);
+				ftmInstances[instance]->CONTROLS[channel].CnSC &= (~FTM_CnSC_CHF_MASK);
 
 				// Calls the callback registered (if any)
 				ch_callback channelCallback = ftmChannelCallbacks[instance][channel];
 				if (channelCallback)
 				{
-					channelCallback(ftmInstance[instance]->CONTROLS[channel].CnV);
+					channelCallback(ftmInstances[instance]->CONTROLS[channel].CnV);
 				}
 			}
 		}
@@ -301,9 +299,10 @@ __ISR__ FTM3_IRQHandler(void)
 
 void setFtmChannelMux(uint8_t instance, uint8_t channel)
 {
-	pin_t 	pin = ftmChannelPins[instance][channel];
-	uint8_t alt = ftmChannelAlts[instance][channel];
-	ports[PIN2PORT(pin)]->PCR |= PORT_PCR_MUX(alt); 
+	PORT_Type* 	ports[] = PORT_BASE_PTRS;
+	pin_t 		pin = ftmChannelPins[instance][channel];
+	uint8_t 	alt = ftmChannelAlts[instance][channel];
+	ports[PIN2PORT(pin)]->PCR[PIN2NUM(pin)] |= PORT_PCR_MUX(alt);
 }
 
 /******************************************************************************/
