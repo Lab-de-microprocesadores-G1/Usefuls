@@ -22,6 +22,7 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
+void onTimerOverflow(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -44,12 +45,18 @@
 /* Called once at the beginning of the program */
 void App_Init (void)
 {
+	// Default configuration of the development board
 	boardInit();
 
+	// Setting up the GPIO output used for the led
 	gpioWrite(PIN_LED_BLUE, !LED_ACTIVE);
 	gpioMode(PIN_LED_BLUE, OUTPUT);
 
-	ftmInit(FTM_INSTANCE_0s);
+	// Initializing the FTM, configuring the overflow mode,
+	// subscribing to the overflow event, and starting the module
+	ftmInit(FTM_INSTANCE_0, 5, 15625);
+	ftmOverflowSubscribe(FTM_INSTANCE_0, onTimerOverflow);
+	ftmStart(FTM_INSTANCE_0);
 }
 
 /* Called repeatedly in an infinit loop */
@@ -65,6 +72,15 @@ void App_Run (void)
  *******************************************************************************
  ******************************************************************************/
 
+void onTimerOverflow(void)
+{
+	static uint16_t count = 0;
+	if (++count >= 50)
+	{
+		count = 0;
+		gpioToggle(PIN_LED_BLUE);
+	}
+}
 
 /*******************************************************************************
  ******************************************************************************/
