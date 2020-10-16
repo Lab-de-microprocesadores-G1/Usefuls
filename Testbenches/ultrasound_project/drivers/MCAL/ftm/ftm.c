@@ -68,7 +68,7 @@ static const uint8_t 	ftmIrqs[] = FTM_IRQS;
 // The one and only one look up table by Nico "El Rafa" Trozzo
 static const pin_t		ftmChannelPins[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 	//	Channel 0			Channel 1			Channel 2			Channel 3		Channel 4			Channel 5			Channel 6			Channel 7
-	{ PORTNUM2PIN(PC,1),  PORTNUM2PIN(PA,4),  PORTNUM2PIN(PC,3), PORTNUM2PIN(PC,4), PORTNUM2PIN(PD,4), PORTNUM2PIN(PD,5), PORTNUM2PIN(PD,6)	, PORTNUM2PIN(PD,7)  },	// FTM0
+	{ PORTNUM2PIN(PC,1),  PORTNUM2PIN(PA,4),  PORTNUM2PIN(PA,5), PORTNUM2PIN(PC,4), PORTNUM2PIN(PD,4), PORTNUM2PIN(PD,5), PORTNUM2PIN(PD,6)	, PORTNUM2PIN(PD,7)  },	// FTM0
 	{ PORTNUM2PIN(PA,12), PORTNUM2PIN(PA,13), 0				   , 0				  , 0				 , 0			   	, 0				   	, 0				     }, // FTM1
 	{ PORTNUM2PIN(PB,18), PORTNUM2PIN(PB,19), 0				   , 0				  , 0				 , 0			   	, 0				   	, 0				     }, // FTM2
 	{ PORTNUM2PIN(PD,0),  PORTNUM2PIN(PD,1),  PORTNUM2PIN(PD,2), PORTNUM2PIN(PD,3), PORTNUM2PIN(PC,8), PORTNUM2PIN(PC,9), PORTNUM2PIN(PC,10), PORTNUM2PIN(PC,11) }  // FTM3
@@ -82,10 +82,6 @@ static const uint8_t	ftmChannelAlts[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 	{  3,  3,  0,  0,  0,  0,  0,  0  }, // FTM2
 	{  4,  4,  4,  4,  3,  3,  3,  3  }  // FTM3
 };
-
-// Duty Cycle changing mechanism
-static bool			updatedCnV[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT];
-
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -233,25 +229,11 @@ void ftmPwmInit(uint8_t instance, uint8_t channel, ftm_pwm_mode_t mode, ftm_pwm_
 	
 	// Pin MUX alternative
 	setFtmChannelMux(instance, channel);
-
-	// Enable Synchronization
-	ftmInstances[instance]->COMBINE |= (FTM_COMBINE_SYNCEN0_MASK << (8 * (channel / 2)));
-
-	// Advanced synchronization, and enable Software Trigger to change CnV!
-	ftmInstances[instance]->SYNCONF |= FTM_SYNCONF_SYNCMODE_MASK | FTM_SYNCONF_SWWRBUF_MASK;
-
-	// Sync when CNT == MOD - 1
-	ftmInstances[instance]->SYNC |= FTM_SYNC_CNTMAX_MASK;
-
 }
 
 void ftmPwmSetDuty(uint8_t instance, uint8_t channel, uint16_t duty)
 {
-	// Software Trigger
-	ftmInstances[instance]->SYNC |= FTM_SYNC_SWSYNC_MASK;
-
-	// Change Duty
-	ftmInstances[instance]->CONTROLS[channel].CnV = duty;
+	ftmInstances[instance]->CONTROLS[channel].CnV = duty - 1;
 }
 
 /*******************************************************************************
