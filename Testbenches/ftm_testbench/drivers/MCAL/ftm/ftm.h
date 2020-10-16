@@ -1,6 +1,13 @@
-/***************************************************************************//**
+/*******************************************************************************
   @file     ftm.h
+
   @brief    FTM Driver
+			When using the FTM driver you should always follow these general steps,
+				(1°) Timer general setup using ftmInit(...)
+				(2°) Channel specific setup, for instance ftmOutputCompareInit(...) 
+					 and, maybe, register a callback on channel match
+				(3°) Never forget starting the ftm at the end with ftmStart(...)
+
   @author   G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
@@ -12,6 +19,7 @@
  ******************************************************************************/
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -52,9 +60,9 @@ typedef enum {
 
 // Output Compare Modes
 typedef enum {
-	FTM_OC_TOGGLE_MATCH,
-	FTM_OC_CLEAR_MATCH,
-	FTM_OC_SET_MATCH
+	FTM_OC_TOGGLE,
+	FTM_OC_CLEAR,
+	FTM_OC_SET
 } ftm_oc_mode_t;
 
 // PWM Modes
@@ -77,12 +85,19 @@ typedef enum {
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
+/*****************************
+*                            *
+* FTM TIMER GENERAL SERVICES *
+*                            *
+*****************************/
+
 /*
  * @brief Initializes FTM
  * @param instance 		FTM Instance
  * @param prescaler		Frequency divider
+ * @param module		Value to reset the count
  */
-void ftmInit(uint8_t instance, uint8_t prescaler);
+void ftmInit(uint8_t instance, uint8_t prescaler, uint16_t module);
 
 /*
  * @brief Starts FTM
@@ -97,9 +112,52 @@ void ftmStart(uint8_t instance);
 void ftmStop(uint8_t instance);
 
 /*
+ * @brief Registers action to be done on instance overflow
+ * @param instance		FTM Instance
+ * @param callback		Callback to be called on overflow event
+ */
+void ftmOverflowSubscribe(uint8_t instance, void (*callback)(void));
+
+/*****************************
+*                            *
+*  CHANNEL GENERAL SERVICES  *
+*                            *
+*****************************/
+
+/**
+ * @brief Sets FTM output value
+ * @param instance		FTM Instance
+ * @param channel		FTM Channel
+ * @param value			Value to be written
+ */
+void ftmSetOutputValue(uint8_t instance, uint8_t channel, bool value);
+
+/*
+ * @brief Sets FTM count
+ * @param instance		FTM Instance
+ * @param channel		FTM Channel
+ * @param count			Number of FTM ticks to count for next event
+ */
+void ftmSetChannelCount(uint8_t instance, uint8_t channel, uint16_t count);
+
+/*
  * @brief Returns current value of FTM Channel count
  */
 uint16_t ftmGetChannelCount(uint8_t instance, uint8_t channel);
+
+/*
+ * @brief Registers action to be done on channel event
+ * @param instance		FTM Instance
+ * @param channel		FTM Channel
+ * @param callback		Callback to be called on channel event
+ */
+void ftmChannelSubscribe(uint8_t instance, uint8_t channel, void (*callback)(uint16_t));
+
+/*****************************
+*                            *
+*   CHANNEL SETUP SERVICES   *
+*                            *
+*****************************/
 
 /*
  * @brief Configures FTM Input Capture Mode
@@ -117,22 +175,6 @@ void ftmInputCaptureInit(uint8_t instance, uint8_t channel, ftm_ic_mode_t mode);
  * @param count			Number of FTM ticks to count for event
  */
 void ftmOutputCompareInit(uint8_t instance, uint8_t channel, ftm_oc_mode_t mode, uint16_t count);
-
-/**
- * @brief Sets FTM output value
- * @param instance		FTM Instance
- * @param channel		FTM Channel
- * @param value			Value to be written
- */
-void ftmSetOutputValue(uint8_t instance, uint8_t channel, bool value);
-
-/*
- * @brief Sets FTM count
- * @param instance		FTM Instance
- * @param channel		FTM Channel
- * @param count			Number of FTM ticks to count for next event
- */
-void ftmSetChannelCount(uint8_t instance, uint8_t channel, uint16_t count);
 
 /*
  * @brief Configures FTM PWM mode
@@ -152,28 +194,6 @@ void ftmPwmInit(uint8_t instance, uint8_t channel, ftm_pwm_mode_t mode, ftm_pwm_
  * @param duty			Duty cycle ticks count
  */
 void ftmPwmSetDuty(uint8_t instance, uint8_t channel, uint16_t duty);
-
-/*
- * @brief Registers action to be done on instance overflow
- * @param instance		FTM Instance
- * @param callback		Callback to be called on overflow event
- */
-void ftmOverflowSubscribe(uint8_t instance, void (*callback)(void));
-
-/*
- * @brief Registers action to be done on channel event
- * @param instance		FTM Instance
- * @param channel		FTM Channel
- * @param callback		Callback to be called on channel event
- */
-void ftmChannelSubscribe(uint8_t instance, uint8_t channel, void (*callback)(uint16_t));
-
-/*
- * @brief Configures FTM overflow value
- * @param instance		FTM Instance
- * @param modulo		Value to reset the count
- */
-void ftmOverflowInit(uint8_t instance, uint16_t modulo);
 
 
 /*******************************************************************************
