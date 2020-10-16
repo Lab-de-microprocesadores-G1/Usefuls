@@ -21,6 +21,7 @@
  ******************************************************************************/
 
 void changeDuty(uint16_t count);
+void changeDutyVoid(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -42,16 +43,16 @@ static bool 	upCounting = true;
  ******************************************************************************/
 
 /* Called once at the beginning of the program */
-void App_Init (void)
+void App_PWM_Init (void)
 {
 	// Init FTM for tick 160ns
 	ftmInit(FTM_INSTANCE_0, 3, 0xFFFF);
 
 	// Config PWM for duty 1.6us, period 3.2us
-	ftmPwmInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_PWM_EDGE_ALIGNED, FTM_PWM_HIGH_PULSES, 10, 20);
+	ftmPwmInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_PWM_EDGE_ALIGNED, FTM_PWM_HIGH_PULSES, duty, 20);
 
 	// Subscribe to channel interrupt
-	ftmChannelSubscribe(FTM_INSANCE_0, FTM_CHANNEL_0, );
+	ftmChannelSubscribe(FTM_INSTANCE_0, FTM_CHANNEL_0, changeDuty);
 
 	// Start FTM
 	ftmStart(FTM_INSTANCE_0);
@@ -59,7 +60,7 @@ void App_Init (void)
 }
 
 /* Called repeatedly in an infinit loop */
-void App_Run (void)
+void App_PWM_Run (void)
 {
     // Things to do in an infinit loop.
 }
@@ -74,22 +75,28 @@ void App_Run (void)
 void changeDuty(uint16_t count)
 {
 	static uint32_t tickCount = PWM_DUTY_UPDATE;	// 100ms
-	if(tickCount > 0)
+	if (tickCount > 0)
 	{
-		if(--tickCount == 0)
+		if (--tickCount == 0)
 		{
-			if(upCounting)
+			duty += upCounting ? 1 : -1;
+			if (duty == 18)
 			{
-				ftmPwmSetDuty(FTM_INSTANCE_0, FTM_CHANNEL_0, )
+				upCounting = false;
 			}
-			else
+			else if (duty == 2)
 			{
-
+				upCounting = true;
 			}
-			tickCount =
+			ftmPwmSetDuty(FTM_INSTANCE_0, FTM_CHANNEL_0, duty);
+			tickCount = PWM_DUTY_UPDATE;
 		}
 	}
 }
 
+void changeDutyVoid(void)
+{
+	changeDuty(0);
+}
 /*******************************************************************************
  ******************************************************************************/

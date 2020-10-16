@@ -31,6 +31,9 @@
 void App_Init (void);
 void App_Run (void);
 
+void App_PWM_Init (void);
+void App_PWM_Run (void);
+
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
@@ -56,9 +59,11 @@ int main (void)
 {
     hw_Init();
     hw_DisableInterrupts();
-    App_Init();       /* Program-specific setup */
+    // App_Init();       /* Program-specific setup */
+    App_PWM_Init();
     hw_EnableInterrupts();
 
     __FOREVER__
-        App_Run();    /* Program-specific loop  */
+        // App_Run();    /* Program-specific loop  */
+		App_PWM_Run();
 }

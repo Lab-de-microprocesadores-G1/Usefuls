@@ -49,7 +49,7 @@ void App_Init (void)
 	gpioWrite(PIN_LED_BLUE, !LED_ACTIVE);
 	gpioMode(PIN_LED_BLUE, OUTPUT);
 
-	ftmInit(FTM_INSTANCE_0s);
+	// ftmInit(FTM_INSTANCE_0);
 }
 
 /* Called repeatedly in an infinit loop */
