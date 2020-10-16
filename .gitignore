@@ -1,2 +1,8 @@
 /.metadata/
 /Debug
+/.idea
+.idea
+.metadata
+/.metadata
+/FreeRTOS_TAD_logs
+FreeRTOS_TAD_logs
