@@ -1,5 +1,10 @@
 /.metadata/
+.metadata/
 /Debug
+Debug
+.vscode/
+/.vscode
+.vscode/
 /.idea
 .idea
 .metadata

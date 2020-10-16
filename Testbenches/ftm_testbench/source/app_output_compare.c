@@ -17,12 +17,14 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define PERIOD			10000
+#define SEMI_PERIOD		((PERIOD) / 2)
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-void onTimerOverflow(void);
+void onChannelInterrupt(uint16_t count);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -33,7 +35,8 @@ void onTimerOverflow(void);
 /*******************************************************************************
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
-// static int myVar;
+
+static uint16_t	dutyDelta = SEMI_PERIOD;
 
 
 /*******************************************************************************
@@ -43,26 +46,23 @@ void onTimerOverflow(void);
  ******************************************************************************/
 
 /* Called once at the beginning of the program */
-void appInitOverflow (void)
+void appInitOutputCompare (void)
 {
 	// Default configuration of the development board
 	boardInit();
 
-	// Setting up the GPIO output used for the led
-	gpioWrite(PIN_LED_BLUE, !LED_ACTIVE);
-	gpioMode(PIN_LED_BLUE, OUTPUT);
-
-	// Initializing the FTM, configuring the overflow mode,
-	// subscribing to the overflow event, and starting the module
-	ftmInit(FTM_INSTANCE_0, 5, 15625);
-	ftmOverflowSubscribe(FTM_INSTANCE_0, onTimerOverflow);
+	// Initializing the FTM, configuring the output compare mode,
+	// subscribing to the channel match event, and starting the module
+	ftmInit(FTM_INSTANCE_0, 5, 0xFFFF);
+	ftmOutputCompareInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_OC_TOGGLE, dutyDelta);
+	ftmChannelSubscribe(FTM_INSTANCE_0, FTM_CHANNEL_0, onChannelInterrupt);
 	ftmStart(FTM_INSTANCE_0);
 }
 
-/* Called repeatedly in an infinit loop */
-void appRunOverflow (void)
+/* Called repeatedly in an infinite loop */
+void appRunOutputCompare (void)
 {
-    // Things to do in an infinit loop.
+    // Things to do in an infinite loop.
 }
 
 
@@ -72,14 +72,13 @@ void appRunOverflow (void)
  *******************************************************************************
  ******************************************************************************/
 
-void onTimerOverflow(void)
+void onChannelInterrupt(uint16_t count)
 {
-	static uint16_t count = 0;
-	if (++count >= 50)
-	{
-		count = 0;
-		gpioToggle(PIN_LED_BLUE);
-	}
+	ftmSetChannelCount(
+			FTM_INSTANCE_0,
+			FTM_CHANNEL_0,
+			gpioRead(PIN_FTM_CHANNEL_0) ? count + dutyDelta : count + (PERIOD - dutyDelta)
+	);
 }
 
 /*******************************************************************************
