@@ -83,10 +83,6 @@ static const uint8_t	ftmChannelAlts[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 	{  4,  4,  4,  4,  3,  3,  3,  3  }  // FTM3
 };
 
-// Duty Cycle changing mechanism
-static bool			updatedCnV[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT];
-
-
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/

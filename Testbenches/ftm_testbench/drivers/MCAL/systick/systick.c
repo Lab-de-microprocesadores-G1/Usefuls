@@ -1,6 +1,6 @@
 /*******************************************************************************
-  @file     main.c
-  @brief    Main application
+  @file     systick.h
+  @brief    Systick simple timer driver
   @author   N. Magliola, G. Davidov, F. Farall, J. Gaytán, L. Kammann, N. Trozzo
  ******************************************************************************/
 
@@ -8,17 +8,20 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include "SysTick.h"
+#include "MK64F12.h"
+#include "core_cm4.h"
 #include "hardware.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define MAX_AMOUT_OF_SUBSCRIBERS	5
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-
 
 /*******************************************************************************
  * VARIABLES WITH GLOBAL SCOPE
@@ -28,26 +31,7 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// #define APPLICATION_OVERFLOW
-// #define APPLICATION_OUTPUT_COMPARE
-// #define APPLICATION_INPUT_CAPTURE
-//#define APPLICATION_PWM
-#define APPLICATION_OUTPUT_COMPARE_SINGLE_SHOT
-
-void appInitOverflow        (void);
-void appRunOverflow         (void);
-
-void appInitOutputCompare   (void);
-void appRunOutputCompare    (void);
-
-void appInitInputCapture    (void);
-void appRunInputCapture     (void);
-
-void appInitPWM             (void);
-void appRunPWM              (void);
-
-void appInitOutputCompareSingleShot   (void);
-void appRunOutputCompareSingleShot    (void);
+__ISR__ SysTick_Handler(void);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -56,6 +40,9 @@ void appRunOutputCompareSingleShot    (void);
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
+
+static void 	(*drivers[MAX_AMOUT_OF_SUBSCRIBERS])(void);	// Each driver function added to receive systick ticks
+static uint8_t 	subscribers = 0;							// Amount of functions subscribed to ticks
 
 /*******************************************************************************
  *******************************************************************************
@@ -70,41 +57,54 @@ void appRunOutputCompareSingleShot    (void);
  *******************************************************************************
  ******************************************************************************/
 
-int main (void)
+bool systickInit (void (*funcallback)(void))
 {
-    hw_Init();
-    hw_DisableInterrupts();
-#ifdef APPLICATION_OVERFLOW
-    appInitOverflow();
-#endif
-#ifdef APPLICATION_OUTPUT_COMPARE
-    appInitOutputCompare();
-#endif
-#ifdef APPLICATION_INPUT_CAPTURE
-    appInitInputCapture();
-#endif
-#ifdef APPLICATION_PWM
-    appInitPWM();
-#endif
-#ifdef APPLICATION_OUTPUT_COMPARE_SINGLE_SHOT
-    appInitOutputCompareSingleShot();
-#endif
-    hw_EnableInterrupts();
+	// Computing the tick amount with the frequency
+	uint32_t ticks = CPU_FREQUENCY_HZ / SYSTICK_ISR_FREQUENCY_HZ;
+	bool succeed = true;
 
-    __FOREVER__
-#ifdef APPLICATION_OVERFLOW
-        appRunOverflow();
-#endif
-#ifdef APPLICATION_OUTPUT_COMPARE
-        appRunOutputCompare();
-#endif
-#ifdef APPLICATION_INPUT_CAPTURE
-        appRunInputCapture();
-#endif
-#ifdef APPLICATION_PWM
-        appRunPWM();
-#endif
-#ifdef APPLICATION_OUTPUT_COMPARE_SINGLE_SHOT
-    appRunOutputCompareSingleShot();
-#endif
+	static bool alreadyInit = false;
+
+	// Verifying if there are subscribers available
+	if (subscribers < MAX_AMOUT_OF_SUBSCRIBERS)
+	{
+		// Setting up the SysTick peripheral
+		if (!alreadyInit)
+		{
+			SysTick->CTRL = 0x00;
+			NVIC_EnableIRQ(SysTick_IRQn);
+			succeed = (bool)SysTick_Config(ticks);
+			alreadyInit = true;
+		}
+
+		// Adding the driver callback
+		drivers[subscribers++] = funcallback;
+	}
+	else
+	{
+		succeed = false;
+	}
+
+	// Return status of the initialization
+	return succeed;
 }
+
+/*******************************************************************************
+ *******************************************************************************
+						INTERRUPT SERVICE ROUTINES
+ *******************************************************************************
+ ******************************************************************************/
+
+__ISR__ SysTick_Handler(void)
+{
+	uint8_t index;
+	for (index = 0 ; index < subscribers ; index++)
+	{
+		if (drivers[index])
+		{
+			drivers[index]();
+		}
+	}
+}
+
+/******************************************************************************/
