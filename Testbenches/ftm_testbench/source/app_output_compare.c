@@ -17,7 +17,7 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define PERIOD			10000
+#define PERIOD			(uint16_t)10000
 #define SEMI_PERIOD		((PERIOD) / 2)
 
 /*******************************************************************************
@@ -25,6 +25,7 @@
  ******************************************************************************/
 
 void onChannelInterrupt(uint16_t count);
+void onOverflowInterrupt(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -37,7 +38,6 @@ void onChannelInterrupt(uint16_t count);
  ******************************************************************************/
 
 static uint16_t	dutyDelta = SEMI_PERIOD;
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -56,6 +56,7 @@ void appInitOutputCompare (void)
 	ftmInit(FTM_INSTANCE_0, 5, 0xFFFF);
 	ftmOutputCompareInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_OC_TOGGLE, dutyDelta);
 	ftmChannelSubscribe(FTM_INSTANCE_0, FTM_CHANNEL_0, onChannelInterrupt);
+	ftmOverflowSubscribe(FTM_INSTANCE_0, onOverflowInterrupt);
 	ftmStart(FTM_INSTANCE_0);
 }
 
@@ -71,6 +72,21 @@ void appRunOutputCompare (void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+
+void onOverflowInterrupt(void)
+{
+	static uint16_t count = 0;
+	if (++count >= 10)
+	{
+		count = 0;
+		dutyDelta += 50;
+
+		if (dutyDelta >= 2000)
+		{
+			dutyDelta = 100;
+		}
+	}
+}
 
 void onChannelInterrupt(uint16_t count)
 {
