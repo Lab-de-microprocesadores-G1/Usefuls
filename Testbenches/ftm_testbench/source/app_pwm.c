@@ -9,19 +9,22 @@
  ******************************************************************************/
 
 #include "drivers/MCAL/ftm/ftm.h"
+#include "drivers/MCAL/gpio/gpio.h"
+#include "board/board.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define PWM_DUTY_UPDATE		31250
+#define PWM_DUTY_UPDATE		7812
+#define FTM_INSTANCE		FTM_INSTANCE_3
+#define FTM_CHANNEL			FTM_CHANNEL_5
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 void changeDuty(uint16_t count);
-void changeDutyVoid(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -34,7 +37,7 @@ void changeDutyVoid(void);
  ******************************************************************************/
 
 static uint16_t duty = 10;
-static bool 	upCounting = true;
+static bool 	upCounting = false;
 
 /*******************************************************************************
  *******************************************************************************
@@ -43,24 +46,26 @@ static bool 	upCounting = true;
  ******************************************************************************/
 
 /* Called once at the beginning of the program */
-void App_PWM_Init (void)
+void appInitPWM (void)
 {
 	// Init FTM for tick 160ns
-	ftmInit(FTM_INSTANCE_0, 3, 0xFFFF);
+	ftmInit(FTM_INSTANCE, 3, 0xFFFF);
 
 	// Config PWM for duty 1.6us, period 3.2us
-	ftmPwmInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_PWM_EDGE_ALIGNED, FTM_PWM_HIGH_PULSES, duty, 20);
+	ftmPwmInit(FTM_INSTANCE, FTM_CHANNEL, FTM_PWM_EDGE_ALIGNED, FTM_PWM_HIGH_PULSES, duty, 20);
 
 	// Subscribe to channel interrupt
-	ftmChannelSubscribe(FTM_INSTANCE_0, FTM_CHANNEL_0, changeDuty);
+	ftmChannelSubscribe(FTM_INSTANCE, FTM_CHANNEL, changeDuty);
 
 	// Start FTM
-	ftmStart(FTM_INSTANCE_0);
+	ftmStart(FTM_INSTANCE);
 
+	gpioMode(PIN_PWM_TRIGGER, OUTPUT);
+	gpioWrite(PIN_PWM_TRIGGER, LOW);
 }
 
 /* Called repeatedly in an infinit loop */
-void App_PWM_Run (void)
+void appRunPWM (void)
 {
     // Things to do in an infinit loop.
 }
@@ -88,15 +93,12 @@ void changeDuty(uint16_t count)
 			{
 				upCounting = true;
 			}
-			ftmPwmSetDuty(FTM_INSTANCE_0, FTM_CHANNEL_0, duty);
+			gpioToggle(PIN_PWM_TRIGGER);
+			ftmPwmSetDuty(FTM_INSTANCE, FTM_CHANNEL, duty);
 			tickCount = PWM_DUTY_UPDATE;
 		}
 	}
 }
 
-void changeDutyVoid(void)
-{
-	changeDuty(0);
-}
 /*******************************************************************************
  ******************************************************************************/

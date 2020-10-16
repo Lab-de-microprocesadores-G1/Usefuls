@@ -21,6 +21,8 @@
 
 // Application specific pinout
 #define PIN_FTM_CHANNEL_0	PORTNUM2PIN(PC, 1)	// PTC1
+#define PIN_PWM_TRIGGER		PORTNUM2PIN(PC, 3)	// PTC3
+
 
 // On Board User LEDs
 #define PIN_LED_RED     	PORTNUM2PIN(PB, 22) // PTB22
@@ -36,7 +38,7 @@
 
 // Active Status
 #define LED_ACTIVE      	LOW
-    
+
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE

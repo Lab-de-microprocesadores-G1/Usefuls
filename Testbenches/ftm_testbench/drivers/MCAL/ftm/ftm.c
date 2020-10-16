@@ -83,6 +83,10 @@ static const uint8_t	ftmChannelAlts[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 	{  4,  4,  4,  4,  3,  3,  3,  3  }  // FTM3
 };
 
+// Duty Cycle changing mechanism
+static bool			updatedCnV[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT];
+
+
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
@@ -229,11 +233,25 @@ void ftmPwmInit(uint8_t instance, uint8_t channel, ftm_pwm_mode_t mode, ftm_pwm_
 	
 	// Pin MUX alternative
 	setFtmChannelMux(instance, channel);
+
+	// Enable Synchronization
+	ftmInstances[instance]->COMBINE |= (FTM_COMBINE_SYNCEN0_MASK << (8 * (channel / 2)));
+
+	// Advanced synchronization, and enable Software Trigger to change CnV!
+	ftmInstances[instance]->SYNCONF |= FTM_SYNCONF_SYNCMODE_MASK | FTM_SYNCONF_SWWRBUF_MASK;
+
+	// Sync when CNT == MOD - 1
+	ftmInstances[instance]->SYNC |= FTM_SYNC_CNTMAX_MASK;
+
 }
 
 void ftmPwmSetDuty(uint8_t instance, uint8_t channel, uint16_t duty)
 {
-	ftmInstances[instance]->CONTROLS[channel].CnV = duty - 1;
+	// Software Trigger
+	ftmInstances[instance]->SYNC |= FTM_SYNC_SWSYNC_MASK;
+
+	// Change Duty
+	ftmInstances[instance]->CONTROLS[channel].CnV = duty;
 }
 
 /*******************************************************************************
