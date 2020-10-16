@@ -28,8 +28,22 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-void App_Init (void);
-void App_Run (void);
+// #define APPLICATION_OVERFLOW
+#define APPLICATION_OUTPUT_COMPARE
+// #define APPLICATION_INPUT_CAPTURE
+// #define APPLICATION_PWM
+
+void appInitOverflow        (void);
+void appRunOverflow         (void);
+
+void appInitOutputCompare   (void);
+void appRunOutputCompare    (void);
+
+void appInitInputCapture    (void);
+void appRunInputCapture     (void);
+
+void appInitPWM             (void);
+void appRunPWM              (void);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -56,9 +70,31 @@ int main (void)
 {
     hw_Init();
     hw_DisableInterrupts();
-    App_Init();       /* Program-specific setup */
+#ifdef APPLICATION_OVERFLOW
+    appInitOverflow();
+#endif
+#ifdef APPLICATION_OUTPUT_COMPARE
+    appInitOutputCompare();
+#endif
+#ifdef APPLICATION_INPUT_CAPTURE
+    appInitInputCapture();
+#endif
+#ifdef APPLICATION_PWM
+    appInitPWM();
+#endif
     hw_EnableInterrupts();
 
     __FOREVER__
-        App_Run();    /* Program-specific loop  */
+#ifdef APPLICATION_OVERFLOW
+        appRunOverflow();
+#endif
+#ifdef APPLICATION_OUTPUT_COMPARE
+        appRunOutputCompare();
+#endif
+#ifdef APPLICATION_INPUT_CAPTURE
+        appRunInputCapture();
+#endif
+#ifdef APPLICATION_PWM
+        appRunPWM();
+#endif
 }

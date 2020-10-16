@@ -8,21 +8,19 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "board.h"
-
-#include "drivers/MCAL/gpio/gpio.h"
 #include "drivers/MCAL/ftm/ftm.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define PWM_DUTY_UPDATE		31250
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-void onTimerOverflow(void);
+void changeDuty(uint16_t count);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -33,8 +31,9 @@ void onTimerOverflow(void);
 /*******************************************************************************
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
-// static int myVar;
 
+static uint16_t duty = 10;
+static bool 	upCounting = true;
 
 /*******************************************************************************
  *******************************************************************************
@@ -43,24 +42,24 @@ void onTimerOverflow(void);
  ******************************************************************************/
 
 /* Called once at the beginning of the program */
-void appInitOverflow (void)
+void appInitPWM (void)
 {
-	// Default configuration of the development board
-	boardInit();
+	// Init FTM for tick 160ns
+	ftmInit(FTM_INSTANCE_0, 3, 0xFFFF);
 
-	// Setting up the GPIO output used for the led
-	gpioWrite(PIN_LED_BLUE, !LED_ACTIVE);
-	gpioMode(PIN_LED_BLUE, OUTPUT);
+	// Config PWM for duty 1.6us, period 3.2us
+	ftmPwmInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_PWM_EDGE_ALIGNED, FTM_PWM_HIGH_PULSES, 10, 20);
 
-	// Initializing the FTM, configuring the overflow mode,
-	// subscribing to the overflow event, and starting the module
-	ftmInit(FTM_INSTANCE_0, 5, 15625);
-	ftmOverflowSubscribe(FTM_INSTANCE_0, onTimerOverflow);
+	// Subscribe to channel interrupt
+	// ftmChannelSubscribe(FTM_INSTANCE_0, FTM_CHANNEL_0, );
+
+	// Start FTM
 	ftmStart(FTM_INSTANCE_0);
+
 }
 
 /* Called repeatedly in an infinit loop */
-void appRunOverflow (void)
+void appRunPWM (void)
 {
     // Things to do in an infinit loop.
 }
@@ -72,14 +71,24 @@ void appRunOverflow (void)
  *******************************************************************************
  ******************************************************************************/
 
-void onTimerOverflow(void)
+void changeDuty(uint16_t count)
 {
-	static uint16_t count = 0;
-	if (++count >= 50)
-	{
-		count = 0;
-		gpioToggle(PIN_LED_BLUE);
-	}
+	static uint32_t tickCount = PWM_DUTY_UPDATE;	// 100ms
+//	if(tickCount > 0)
+//	{
+//		if(--tickCount == 0)
+//		{
+//			if(upCounting)
+//			{
+//				ftmPwmSetDuty(FTM_INSTANCE_0, FTM_CHANNEL_0, )
+//			}
+//			else
+//			{
+//
+//			}
+//			tickCount =
+//		}
+//	}
 }
 
 /*******************************************************************************

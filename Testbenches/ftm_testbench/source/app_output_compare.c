@@ -46,7 +46,7 @@ static uint16_t	dutyDelta = SEMI_PERIOD;
  ******************************************************************************/
 
 /* Called once at the beginning of the program */
-void App_Init (void)
+void appInitOutputCompare (void)
 {
 	// Default configuration of the development board
 	boardInit();
@@ -60,7 +60,7 @@ void App_Init (void)
 }
 
 /* Called repeatedly in an infinite loop */
-void App_Run (void)
+void appRunOutputCompare (void)
 {
     // Things to do in an infinite loop.
 }

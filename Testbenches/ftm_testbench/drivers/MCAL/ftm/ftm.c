@@ -77,7 +77,7 @@ static const pin_t		ftmChannelPins[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 // FTM Channel Pin MUX Alternatives
 static const uint8_t	ftmChannelAlts[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 	// Ch0 Ch1 Ch2 Ch3 Ch4 Ch5 Ch6 Ch7
-	{  3,  3,  3,  4,  4,  4,  4,  4  }, // FTM0
+	{  4,  3,  3,  4,  4,  4,  4,  4  }, // FTM0
 	{  3,  3,  0,  0,  0,  0,  0,  0  }, // FTM1
 	{  3,  3,  0,  0,  0,  0,  0,  0  }, // FTM2
 	{  4,  4,  4,  4,  3,  3,  3,  3  }  // FTM3
@@ -225,7 +225,7 @@ void ftmPwmInit(uint8_t instance, uint8_t channel, ftm_pwm_mode_t mode, ftm_pwm_
 	// Configure PWM period and duty
 	ftmInstances[instance]->CNTIN = 0;
 	ftmInstances[instance]->MOD = period - 1;
-	ftmInstances[instance]->CONTROLS[channel].CnV = duty - 1;
+	ftmInstances[instance]->CONTROLS[channel].CnV = duty;
 	
 	// Pin MUX alternative
 	setFtmChannelMux(instance, channel);
