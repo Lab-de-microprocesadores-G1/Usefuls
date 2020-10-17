@@ -29,6 +29,7 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// FlexTimer Channels
 typedef enum {
 	FTM_CHANNEL_0,
 	FTM_CHANNEL_1,
@@ -41,6 +42,7 @@ typedef enum {
 	FTM_CHANNEL_COUNT
 } ftm_channel_t;
 
+// FlexTimer Instances
 typedef enum {
 	FTM_INSTANCE_0,
 	FTM_INSTANCE_1,
