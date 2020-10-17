@@ -8,28 +8,39 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "board/board.h"
+#include "board.h"
 
+#include "drivers/HAL/button/button.h"
 #include "drivers/HAL/led/led.h"
-#include "drivers/MCAL/gpio/gpio.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+// #define APP_TEST_SET_AND_CLEAR 	// OK!
+// #define APP_TEST_TOGGLE			// OK!
+// #define APP_TEST_STATUS			// OK!
+// #define APP_TEST_BLINK			// OK!
+// #define APP_TEST_BLINK_SOME		// OK!
+// #define APP_TEST_BURST			// OK!
+// #define APP_TEST_ONE_SHOT		// OK!
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static void onToggleBlink(void);
-static void onToggleLed(void);
+static void onButtonLeft(void);
+static void onButtonRight(void);
+
+/*******************************************************************************
+ * VARIABLES TYPES DEFINITIONS
+ ******************************************************************************/
+
 
 /*******************************************************************************
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static bool enabled;
 
 /*******************************************************************************
  *******************************************************************************
@@ -38,23 +49,21 @@ static bool enabled;
  ******************************************************************************/
 
 /* Called once at the beginning of the program */
-void App_Init (void)
+void appInit (void)
 {
-	ledInit();
 	boardInit();
+	buttonInit();
+	ledInit();
 
-	gpioMode(PIN_SW2, INPUT | PULLUP);
-	gpioIRQ(PIN_SW2, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, onToggleLed);
-
-	gpioMode(PIN_SW3, INPUT | PULLUP);
-	gpioIRQ(PIN_SW3, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, onToggleBlink);
+	buttonSubscribe(BUTTON_LEFT, BUTTON_PRESS, onButtonLeft);
+	buttonSubscribe(BUTTON_RIGHT, BUTTON_PRESS, onButtonRight);
 }
 
-/* Called repeatedly in an infinit loop */
-void App_Run (void)
+/* Called repeatedly in an infinite loop */
+void appRun (void)
 {
+    // Application iterative tasks, every loop runs this function
 }
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -62,31 +71,68 @@ void App_Run (void)
  *******************************************************************************
  ******************************************************************************/
 
-static void onToggleBlink(void)
+static void onButtonLeft(void)
 {
-	enabled = !enabled;
-	if (enabled)
-	{
-		ledBurst(LED_BLUE, 3000, 100, 5);
-	}
-	else
-	{
-		ledTurn(LED_BLUE, OFF);
-	}
+#ifdef APP_TEST_SET_AND_CLEAR
+	ledSet(LED_RED);
+#endif
+
+#ifdef APP_TEST_TOGGLE
+	ledToggle(LED_BLUE);
+#endif
+
+#ifdef APP_TEST_STATUS
+	ledStatus(LED_GREEN, true);
+#endif
+
+#ifdef APP_TEST_BLINK
+	ledBlink(LED_RED, LED_MS2TICK(1000));
+#endif
+
+#ifdef APP_TEST_BLINK_SOME
+	ledBlinkSome(LED_RED, LED_MS2TICK(400), 5);
+#endif
+
+#ifdef APP_TEST_BURST
+	ledBurst(LED_RED, LED_MS2TICK(2000), LED_MS2TICK(300), 5);
+#endif
+
+#ifdef APP_TEST_ONE_SHOT
+	ledOneShot(LED_RED, LED_MS2TICK(1000));
+#endif
 }
 
-static void onToggleLed(void)
+static void onButtonRight(void)
 {
-	enabled = !enabled;
-	if (enabled)
-	{
-		ledBurst(LED_BLUE, 3000, 100, 5);
-	}
-	else
-	{
-		ledTurn(LED_BLUE, OFF);
-	}
+#ifdef APP_TEST_SET_AND_CLEAR
+	ledClear(LED_RED);
+#endif
+
+#ifdef APP_TEST_TOGGLE
+	ledToggle(LED_RED);
+#endif
+
+#ifdef APP_TEST_STATUS
+	ledStatus(LED_GREEN, false);
+#endif
+
+#ifdef APP_TEST_BLINK
+	ledClear(LED_RED);
+#endif
+
+#ifdef APP_TEST_BLINK_SOME
+	ledClear(LED_RED);
+#endif
+
+#ifdef APP_TEST_BURST
+	ledClear(LED_RED);
+#endif
+
+#ifdef APP_TEST_ONE_SHOT
+	ledClear(LED_RED);
+#endif
 }
+
 
 /*******************************************************************************
  ******************************************************************************/

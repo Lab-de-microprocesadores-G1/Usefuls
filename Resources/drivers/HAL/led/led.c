@@ -9,76 +9,167 @@
  ******************************************************************************/
 
 #include "led.h"
+#include "board.h"
 
 #include "drivers/MCAL/gpio/gpio.h"
 #include "drivers/MCAL/systick/systick.h"
-
-#include "../../../board/board.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define SYSTICK_MS		(1 / SYSTICK_ISR_FREQUENCY_HZ * 1000)
-#define M2TICKS(ms)		( (ms) / SYSTICK_MS )
+// ¡IMPORTANT USE WARNING!
+// The led driver supports two operation modes, user may define which
+// will be used by applying the corresponding define.
+//
+// * LED_DRIVER_LIGHT_MODE only allows simple Set, Clear, Toggle and Status
+// control services, and disables all other complex functionalities
+// that use periodic interruption services. Use this mode when you don't need
+// blinking, burst, one shot functionalities and want to avoid having the led driver
+// PISR CPU load.
+// * LED_DRIVER_ADVANCED_MODE deploys complete functionalities of the led driver,
+// using the PISR.
+//
+// #define LED_DRIVER_LIGHT_MODE
+#define LED_DRIVER_ADVANCED_MODE
+
+#if !defined(LED_DRIVER_LIGHT_MODE) && !defined(LED_DRIVER_ADVANCED_MODE)
+	#error	Need to define the operation mode of the driver.
+#endif
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef struct {
-	ttick_t		period;		// Period of the blinking mode
-	ttick_t		cnt;		// Counter of the period
-} led_blink_t;
+// Declaration of led modes, used to control the current data context
+typedef enum {
+	STATIC,			// Led is on or off, does not need continuous control of the ISR
+	BLINK,			// Blinking mode
+	BLINK_SOME,		// Blinking mode during some specified amount of blink periods
+	BURST,			// Burst mode
+	ONE_SHOT,		// One shot mode
 
-typedef struct {
-	ttick_t		burstPeriod;		// Period of the burst mode
-	ttick_t		blinkPeriod;		// Period of the blink mode
-	uint8_t		amount;				// Amount of blinks in the burst period
-	ttick_t		burstCounter;		// Counter of the period of the burst
-	ttick_t		blinkCounter;		// Counter of the period of each blink
-	uint8_t		amountCounter;		// Counter of number of blinks done
-} led_burst_t;
+	LED_MODE_COUNT
+} led_mode_t;
 
+// Declaration of variables needed to run blinking mode
+typedef struct {
+	uint32_t	period;			// Blinking period
+	uint32_t	counter;		// Blinking current count value
+} blink_context_t;
+
+// Declaration of variables needed to run blinking some mode
+typedef struct {
+	uint32_t	period;			// Blinking period
+	uint32_t	counter;		// Blinking current count value
+	uint8_t		changes;		// Amount of changes before finish (changes = 2 * blinks)
+} blink_some_context_t;
+
+// Declaration of variables needed to run burst mode
+typedef struct {
+	uint32_t	burstPeriod;	// Period of the burst
+	uint32_t	blinkPeriod;	// Period of the high speed blinking
+	uint32_t	burstCounter;	// Burst current count value
+	uint32_t	blinkCounter;	// Blink current count value
+	uint8_t		blinks;			// Amount of blinks for each burst period
+	uint8_t		changes;		// Remaining changes ( changes = 2 * blinks )
+} burst_context_t;
+
+// Declaration of variables needed to run one shot mode
+typedef struct {
+	uint32_t	counter;		// Current value of remaining ticks before finishing
+} one_shot_context_t;
+
+// Declaration of context data structure, use the same memory for all context types
 typedef union {
-	led_blink_t		blink;	// The Blinking mode data in the instance
-	led_burst_t		burst;	// The Burst mode data in the instance
-} led_mode_data_t;
+	blink_context_t			blink;		// Blink mode context
+	blink_some_context_t	blinkSome;	// BlinkSome mode context
+	burst_context_t			burst;		// Burst mode context
+	one_shot_context_t		oneShot;	// OneShot mode context
+} context_t;
 
+// Declaration of the led data structure
 typedef struct {
-	pin_t			pin;			// The pin assigned to the LED
-	bool			enabled;		// Disable used to stop interruptions during change of setting
-	bool			activeState;	// Logic active state of the LED
-	led_mode_t 		currentMode;	// Current mode of operation
-	led_mode_data_t settings;		// Settings of the current mode of operation
+	pin_t		pin;		// The pin assigned to the led
+	bool		active;		// ¿The led is active on high?
+	led_mode_t	mode;		// The current led mode
+	bool		enabled;	// Stops interruption control while settings are being changed by user
+	context_t	context;	// Data context to run each led mode
 } led_t;
+
+// Declaration of the led function process control
+typedef void	(*process)(led_t* led);
 
 /*******************************************************************************
  * VARIABLES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-
-
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static void ledIsr(void);
-static void ledDisable(led_id_t id);
+/**
+ * @brief Driver periodic service routine used to control status of all the
+ * 	      led registered, should run periodically over the specified base time
+ * 	      in the .h file.
+ */
+static void ledISR(void);
+
+/*******************************************************************************
+ * LED STRUCTURE FUNCTIONS WITH FILE LEVEL SCOPE
+ ******************************************************************************/
+
+/**
+ * @brief Initializes the led structure.
+ * @param led	Led instance pointer
+ */
+static void ledInstanceInit(led_t* led);
+
+/**
+ * @brief Locks the control process of the led, so the interruption service routine
+ * 		  will not try to control the led, this must be used whenever the led changes
+ * 		  its current settings.
+ * @param led	Led instance pointer
+ */
+static void ledInstanceLock(led_t* led);
+
+/**
+ * @brief Unlocks the led, enables the ISR control process.
+ * @param led	Led instance pointer
+ */
+static void ledInstanceUnlock(led_t* led);
+
+/**
+ * @brief Runs the process of control every tick for each function
+ * @param led	Led instance pointer
+ */
+static void ledInstanceBlinkProcess(led_t* led);
+static void ledInstanceBlinkSomeProcess(led_t* led);
+static void ledInstanceBurstProcess(led_t* led);
+static void ledInstanceOneShotProcess(led_t* led);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-
+static const process	processDispatch[LED_MODE_COUNT] = {
+		NULL,							// mode = STATIC
+		ledInstanceBlinkProcess,		// mode = BLINK
+		ledInstanceBlinkSomeProcess,	// mode = BLINK_SOME
+		ledInstanceBurstProcess,		// mode = BURST
+		ledInstanceOneShotProcess		// mode = ONE_SHOT
+};
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static led_t leds[AMOUNT_OF_LEDS] = {
-		{PIN_LED_RED, LED_ACTIVE},
-		{PIN_LED_BLUE, LED_ACTIVE}
+// Definition of each led instance
+static led_t 			leds[LED_TOTAL_COUNT] = {
+		//  LED PIN			LED ACTIVE STATUS
+		{	PIN_LED_RED,	LED_ACTIVE	},
+		{	PIN_LED_BLUE, 	LED_ACTIVE	},
+		{	PIN_LED_GREEN, 	LED_ACTIVE	}
 };
 
 /*******************************************************************************
@@ -89,122 +180,171 @@ static led_t leds[AMOUNT_OF_LEDS] = {
 
 void ledInit(void)
 {
-	// Initializing periodic ISR...
-	systickIsr(ledIsr);
-
-	// Initializing leds...
-	uint8_t index;
-	for(index = 0 ; index < AMOUNT_OF_LEDS ; index++)
+	static bool init = false;
+	if (!init)
 	{
-		// Setting initial state of each LED
-		leds[index].currentMode = STATIC;
+		// If not initialized, clear the flag to avoid multiple initializations
+		init = true;
 
-		// Configuring the pin and port used by the LED
-		gpioWrite(leds[index].pin, !leds[index].activeState);
-		gpioMode(leds[index].pin, OUTPUT);
+		// Initialize each led instance structure
+		for (uint8_t ledIndex = 0; ledIndex < LED_TOTAL_COUNT; ledIndex++)
+		{
+			ledInstanceInit(&leds[ledIndex]);
+		}
+
+#ifdef LED_DRIVER_ADVANCED_MODE
+		// Initialize the base time used for the driver ISR
+		systickInit(ledISR);
+#endif
+	}
+}
+
+void ledSet(led_id_t id)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (id >= 0 && id < LED_TOTAL_COUNT)
+#endif
+	{
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
+
+		led->mode = STATIC;
+		gpioWrite(led->pin, led->active);
+
+		ledInstanceUnlock(led);
+	}
+}
+
+void ledClear(led_id_t id)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (id >= 0 && id < LED_TOTAL_COUNT)
+#endif
+	{
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
+
+		led->mode = STATIC;
+		gpioWrite(led->pin, !led->active);
+
+		ledInstanceUnlock(led);
 	}
 }
 
 void ledToggle(led_id_t id)
 {
 #ifdef LED_DEVELOPMENT_MODE
-	if (id >= 0 && id < AMOUNT_OF_LEDS)
+	if (id >= 0 && id < LED_TOTAL_COUNT)
 #endif
 	{
-		led_t *led = &leds[id];
-		if (led->currentMode == STATIC)
-		{
-			gpioToggle(led->pin);
-		}
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
+
+		led->mode = STATIC;
+		gpioToggle(led->pin);
+
+		ledInstanceUnlock(led);
 	}
-#ifdef LED_DEVELOPMENT_MODE
-	else
-	{
-		// Raise some error!
-	}
-#endif
 }
 
-void ledTurn(led_id_t id, led_status_t status)
+void ledStatus(led_id_t id, bool active)
 {
 #ifdef LED_DEVELOPMENT_MODE
-	if (id >= 0 && id < AMOUNT_OF_LEDS)
+	if (id >= 0 && id < LED_TOTAL_COUNT)
 #endif
 	{
-		// Disable current configurations of the led
-		ledDisable(id);
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
 
-		// Change to STATIC mode of operation
-		led_t *led = &leds[id];
-		led->enabled = false;
-		led->currentMode = STATIC;
-		gpioWrite(led->pin, status == ON ? led->activeState : !led->activeState);
-		led->enabled = true;
+		led->mode = STATIC;
+		gpioWrite(led->pin, active ? led->active : !led->active);
+
+		ledInstanceUnlock(led);
 	}
-#ifdef LED_DEVELOPMENT_MODE
-	else
-	{
-		// Raise some error!
-	}
-#endif
 }
 
-void ledBlink(led_id_t id, ttick_t period)
+void ledBlink(led_id_t id, uint32_t period)
 {
 #ifdef LED_DEVELOPMENT_MODE
-	if (id >= 0 && id < AMOUNT_OF_LEDS)
+	if (id >= 0 && id < LED_TOTAL_COUNT)
 #endif
 	{
-		// Disable current configurations of the led
-		ledDisable(id);
+#ifdef LED_DRIVER_ADVANCED_MODE
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
 
-		// Change to BLINK mode of operation
-		led_t *led = &leds[id];
-		led->enabled = false;
-		led->currentMode = BLINK;
-		led->settings.blink.period = period;
-		led->settings.blink.cnt = period / 2;
-		led->enabled = true;
-	}
-#ifdef LED_DEVELOPMENT_MODE
-	else
-	{
-		// Raise some error!
-	}
+		led->mode = BLINK;
+		led->context.blink.period = period;
+		led->context.blink.counter = period / 2;
+		gpioWrite(led->pin, led->active);
+
+		ledInstanceUnlock(led);
 #endif
+	}
 }
 
-void ledBurst(led_id_t id, ttick_t burstPeriod, ttick_t blinkPeriod, uint8_t burst)
+void ledBlinkSome(led_id_t id, uint32_t period, uint8_t blinks)
 {
 #ifdef LED_DEVELOPMENT_MODE
-	if (id >= 0 && id < AMOUNT_OF_LEDS)
+	if (id >= 0 && id < LED_TOTAL_COUNT)
 #endif
 	{
-		// Disable current configurations of the led
-		ledDisable(id);
+#ifdef LED_DRIVER_ADVANCED_MODE
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
 
-		// Change to BURST mode of operation
-		led_t *led = &leds[id];
-		led->enabled = false;
-		led->currentMode = BURST;
+		led->mode = BLINK_SOME;
+		led->context.blinkSome.period = period;
+		led->context.blinkSome.counter = period / 2;
+		led->context.blinkSome.changes = 2 * blinks - 1;
+		gpioWrite(led->pin, led->active);
 
-		led->settings.burst.burstPeriod = burstPeriod;
-		led->settings.burst.blinkPeriod = blinkPeriod;
-		led->settings.burst.amount = burst;
-
-		led->settings.burst.burstCounter = burstPeriod / 2;
-		led->settings.burst.blinkCounter = blinkPeriod / 2;
-		led->settings.burst.amountCounter = burst * 2;
-
-		gpioWrite(led->pin, led->activeState);
-		led->enabled = true;
+		ledInstanceUnlock(led);
+#endif
 	}
+}
+
+void ledBurst(led_id_t id, uint32_t burstPeriod, uint32_t blinkPeriod, uint8_t blinks)
+{
 #ifdef LED_DEVELOPMENT_MODE
-	else
-	{
-		// Raise some error!
-	}
+	if (id >= 0 && id < LED_TOTAL_COUNT)
 #endif
+	{
+#ifdef LED_DRIVER_ADVANCED_MODE
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
+
+		led->mode = BURST;
+		led->context.burst.burstPeriod = burstPeriod;
+		led->context.burst.blinkPeriod = blinkPeriod;
+		led->context.burst.burstCounter = burstPeriod;
+		led->context.burst.blinkCounter = blinkPeriod / 2;
+		led->context.burst.blinks = blinks;
+		led->context.burst.changes = 2 * blinks - 1;
+		gpioWrite(led->pin, led->active);
+
+		ledInstanceUnlock(led);
+#endif
+	}
+}
+
+void ledOneShot(led_id_t id, uint32_t duration)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (id >= 0 && id < LED_TOTAL_COUNT)
+#endif
+	{
+#ifdef LED_DRIVER_ADVANCED_MODE
+		led_t* led = &leds[id];
+		ledInstanceLock(led);
+
+		led->mode = ONE_SHOT;
+		led->context.oneShot.counter = duration;
+		gpioWrite(led->pin, led->active);
+
+		ledInstanceUnlock(led);
+#endif
+	}
 }
 
 /*******************************************************************************
@@ -213,83 +353,150 @@ void ledBurst(led_id_t id, ttick_t burstPeriod, ttick_t blinkPeriod, uint8_t bur
  *******************************************************************************
  ******************************************************************************/
 
-static void ledDisable(led_id_t id)
+static void ledISR(void)
 {
-
-#ifdef LED_DEVELOPMENT_MODE
-	if (id >= 0 && id < AMOUNT_OF_LEDS)
-#endif
+	for (uint8_t ledIndex = 0; ledIndex < LED_TOTAL_COUNT; ledIndex++)
 	{
-		led_t *led = &leds[id];
-
-		led->enabled = false;
-
-		led->currentMode = STATIC;
-		gpioWrite(led->pin, !led->activeState);
-
-		led->enabled = true;
-	}
-#ifdef LED_DEVELOPMENT_MODE
-	else
-	{
-		// Raise some error!
-	}
-#endif
-}
-
-static void ledIsr(void)
-{
-	uint8_t index;
-	for (index = 0 ; index < AMOUNT_OF_LEDS ; index++)
-	{
-		led_t *led = &leds[index];
+		led_t* led = &leds[ledIndex];
 		if (led->enabled)
 		{
-			switch (led->currentMode)
+			process modeProcess = processDispatch[led->mode];
+			if (modeProcess)
 			{
-				case STATIC:
-					// This mode is not handled by the periodic ISR
-					break;
-
-				case BLINK:
-					led->settings.blink.cnt--;
-					if (led->settings.blink.cnt == 0)
-					{
-						led->settings.blink.cnt = led->settings.blink.period / 2;
-						gpioToggle(led->pin);
-					}
-					break;
-
-				case BURST:
-					led->settings.burst.burstCounter--;
-					if (led->settings.burst.burstCounter == 0)
-					{
-						led->settings.burst.burstCounter = led->settings.burst.burstPeriod / 2;
-						led->settings.burst.blinkCounter = led->settings.burst.blinkPeriod / 2;
-						led->settings.burst.amountCounter = led->settings.burst.amount * 2;
-					}
-					else
-					{
-						if (led->settings.burst.amountCounter > 0)
-						{
-							led->settings.burst.blinkCounter--;
-							if (led->settings.burst.blinkCounter == 0)
-							{
-								led->settings.burst.blinkCounter = led->settings.burst.blinkPeriod / 2;
-								led->settings.burst.amountCounter--;
-								gpioToggle(led->pin);
-							}
-						}
-
-						if (led->settings.burst.amountCounter == 0)
-						{
-							gpioWrite(led->pin, !led->activeState);
-						}
-					}
-					break;
+				modeProcess(led);
 			}
 		}
 	}
 }
+
+/*******************************************************************************
+ *******************************************************************************
+                        LED STRUCTURE FUNCTION DEFINITIONS
+ *******************************************************************************
+ ******************************************************************************/
+
+static void ledInstanceInit(led_t* led)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (led)
+#endif
+	{
+		// Initialization of some structure variables
+		led->enabled = true;
+		led->mode = STATIC;
+
+		// Initialization of GPIO associated to the led structure
+		gpioWrite(led->pin, !led->active);
+		gpioMode(led->pin, OUTPUT);
+	}
+}
+
+static void ledInstanceLock(led_t* led)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (led)
+#endif
+	{
+		led->enabled = false;
+	}
+}
+
+static void ledInstanceUnlock(led_t* led)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (led)
+#endif
+	{
+		led->enabled = true;
+	}
+}
+
+static void ledInstanceBlinkProcess(led_t* led)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (led)
+#endif
+	{
+		blink_context_t* context = &led->context.blink;
+		if (--context->counter == 0)
+		{
+			gpioToggle(led->pin);
+			context->counter = context->period / 2;
+		}
+	}
+}
+
+static void ledInstanceBlinkSomeProcess(led_t* led)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (led)
+#endif
+	{
+		blink_some_context_t* context = &led->context.blinkSome;
+		if (--context->counter == 0)
+		{
+			gpioToggle(led->pin);
+			if (--context->changes == 0)
+			{
+				led->mode = STATIC;
+			}
+			else
+			{
+				context->counter = context->period / 2;
+			}
+		}
+	}
+}
+
+static void ledInstanceBurstProcess(led_t* led)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (led)
+#endif
+	{
+		burst_context_t* context = &led->context.burst;
+		if (--context->burstCounter == 0)
+		{
+			gpioWrite(led->pin, led->active);
+			context->burstCounter = context->burstPeriod;
+			context->blinkCounter = context->blinkPeriod / 2;
+			context->changes = context->blinks * 2 - 1;
+		}
+		else
+		{
+			if (context->changes)
+			{
+				if (--context->blinkCounter == 0)
+				{
+					gpioToggle(led->pin);
+					context->blinkCounter = context->blinkPeriod / 2;
+					context->changes--;
+				}
+			}
+		}
+	}
+}
+
+static void ledInstanceOneShotProcess(led_t* led)
+{
+#ifdef LED_DEVELOPMENT_MODE
+	if (led)
+#endif
+	{
+		one_shot_context_t* context = &led->context.oneShot;
+		if (--context->counter == 0)
+		{
+			gpioWrite(led->pin, !led->active);
+			led->mode = STATIC;
+		}
+	}
+}
+
+
+/*******************************************************************************
+ *******************************************************************************
+						 INTERRUPT SERVICE ROUTINES
+ *******************************************************************************
+ ******************************************************************************/
 
 /******************************************************************************/

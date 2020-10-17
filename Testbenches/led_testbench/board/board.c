@@ -8,9 +8,8 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <stdio.h>
 #include "board.h"
-
-#include "stdio.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE

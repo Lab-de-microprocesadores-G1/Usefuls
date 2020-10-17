@@ -37,7 +37,7 @@ enum { PA, PB, PC, PD, PE };
 #define SLEWRATE 			    0x010
 #define OPENDRAIN			    0x020
 #define LOCK				      0x040
-#define FILTER				    0x080
+#define GPIO_FILTER				0x080
 #define DRIVESTRENGTH		  0x100
 
 // Backwards Compatibility
