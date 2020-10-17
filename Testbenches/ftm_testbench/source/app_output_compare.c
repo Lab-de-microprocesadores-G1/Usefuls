@@ -25,7 +25,8 @@
  ******************************************************************************/
 
 void onChannelInterrupt(uint16_t count);
-void onOverflowInterrupt(void);
+void onSW2Pressed(void);
+void onSW3Pressed(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -51,12 +52,18 @@ void appInitOutputCompare (void)
 	// Default configuration of the development board
 	boardInit();
 
+	// GPIO
+	gpioMode(PIN_SW3, INPUT | PULLUP);
+	gpioMode(PIN_SW2, INPUT | PULLUP);
+	gpioIRQ(PIN_SW2, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, onSW2Pressed);
+	gpioIRQ(PIN_SW3, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, onSW3Pressed);
+
 	// Initializing the FTM, configuring the output compare mode,
 	// subscribing to the channel match event, and starting the module
 	ftmInit(FTM_INSTANCE_0, 5, 0xFFFF);
-	ftmOutputCompareInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_OC_TOGGLE, dutyDelta);
+	ftmOutputCompareInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_OC_TOGGLE, false);
 	ftmChannelSubscribe(FTM_INSTANCE_0, FTM_CHANNEL_0, onChannelInterrupt);
-	ftmOverflowSubscribe(FTM_INSTANCE_0, onOverflowInterrupt);
+	ftmOutputCompareStart(FTM_INSTANCE_0, FTM_CHANNEL_0, dutyDelta);
 	ftmStart(FTM_INSTANCE_0);
 }
 
@@ -73,28 +80,37 @@ void appRunOutputCompare (void)
  *******************************************************************************
  ******************************************************************************/
 
-void onOverflowInterrupt(void)
-{
-	static uint16_t count = 0;
-	if (++count >= 10)
-	{
-		count = 0;
-		dutyDelta += 50;
-
-		if (dutyDelta >= 2000)
-		{
-			dutyDelta = 100;
-		}
-	}
-}
-
 void onChannelInterrupt(uint16_t count)
 {
-	ftmSetChannelCount(
+	ftmChannelSetCount(
 			FTM_INSTANCE_0,
 			FTM_CHANNEL_0,
 			gpioRead(PIN_FTM_CHANNEL_0) ? count + dutyDelta : count + (PERIOD - dutyDelta)
 	);
+}
+
+void onSW2Pressed(void)
+{
+	static bool active = true;
+	if (active)
+	{
+		active = false;
+		ftmOutputCompareStop(FTM_INSTANCE_0, FTM_CHANNEL_0);
+	}
+	else
+	{
+		active = true;
+		ftmOutputCompareStart(FTM_INSTANCE_0, FTM_CHANNEL_0, dutyDelta);
+	}
+}
+
+void onSW3Pressed(void)
+{
+	dutyDelta += 100;
+	if (dutyDelta >= 4000)
+	{
+		dutyDelta = 100;
+	}
 }
 
 /*******************************************************************************

@@ -31,8 +31,8 @@
 // #define APPLICATION_OVERFLOW
 // #define APPLICATION_OUTPUT_COMPARE
 // #define APPLICATION_INPUT_CAPTURE
-//#define APPLICATION_PWM
-#define APPLICATION_OUTPUT_COMPARE_SINGLE_SHOT
+#define APPLICATION_PWM
+// #define APPLICATION_OUTPUT_COMPARE_SINGLE_SHOT
 
 void appInitOverflow        (void);
 void appRunOverflow         (void);

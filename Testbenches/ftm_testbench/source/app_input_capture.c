@@ -71,9 +71,7 @@ void appRunInputCapture (void)
 
 void onChannelInterruptIC(uint16_t count)
 {
-	static uint16_t buffer;
-
-	buffer = count;
+	uint16_t bufferCount = count;
 }
 
 /*******************************************************************************

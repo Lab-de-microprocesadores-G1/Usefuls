@@ -17,14 +17,15 @@
  ******************************************************************************/
 
 #define PWM_DUTY_UPDATE		7812
-#define FTM_INSTANCE		FTM_INSTANCE_3
-#define FTM_CHANNEL			FTM_CHANNEL_5
+#define FTM_INSTANCE		FTM_INSTANCE_0
+#define FTM_CHANNEL			FTM_CHANNEL_0
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 void changeDuty(uint16_t count);
+void onSW3PressedPWM(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -62,12 +63,15 @@ void appInitPWM (void)
 
 	gpioMode(PIN_PWM_TRIGGER, OUTPUT);
 	gpioWrite(PIN_PWM_TRIGGER, LOW);
+
+	gpioMode(PIN_SW3, INPUT | PULLUP);
+	gpioIRQ(PIN_SW3, GPIO_IRQ_MODE_INTERRUPT_FALLING_EDGE, onSW3PressedPWM);
 }
 
-/* Called repeatedly in an infinit loop */
+/* Called repeatedly in an infinite loop */
 void appRunPWM (void)
 {
-    // Things to do in an infinit loop.
+    // Things to do in an infinite loop.
 }
 
 
@@ -98,6 +102,13 @@ void changeDuty(uint16_t count)
 			tickCount = PWM_DUTY_UPDATE;
 		}
 	}
+}
+
+void onSW3PressedPWM(void)
+{
+	static bool active = true;
+	active = !active;
+	ftmPwmSetEnable(FTM_INSTANCE_0, FTM_CHANNEL_0, active);
 }
 
 /*******************************************************************************

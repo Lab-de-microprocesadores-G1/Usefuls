@@ -48,7 +48,8 @@ void appInitOutputCompareSingleShot (void)
 	boardInit();
 
 	// Initializing FTM
-	ftmInit(FTM_INSTANCE_0, 5, 0xFFFF);	// tick 640ns
+	ftmInit(FTM_INSTANCE_0, 7, 0xFFFF);
+	ftmOutputCompareInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_OC_CLEAR, true);
 	ftmStart(FTM_INSTANCE_0);
 
 	// Init Button
@@ -71,8 +72,7 @@ void appRunOutputCompareSingleShot (void)
 
 void buttonPressed(void)
 {
-	ftmSetOutputValue(FTM_INSTANCE_0, FTM_CHANNEL_0, true);
-	ftmOutputCompareInit(FTM_INSTANCE_0, FTM_CHANNEL_0, FTM_OC_CLEAR, PULSE_WIDTH);
+	ftmOutputCompareStart(FTM_INSTANCE_0, FTM_CHANNEL_0, 0xFFFF);
 }
 
 /*******************************************************************************
