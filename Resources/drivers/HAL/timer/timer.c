@@ -8,7 +8,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 #include "timer.h"
-#include "../../MCAL/systick/systick.h"
+#include "../../MCAL/systick/SysTick.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -47,7 +47,7 @@ typedef struct {
 /**
  * @brief Periodic service
  */
-static void timerIsr(void);
+static void timer_isr(void);
 
 
 /*******************************************************************************
@@ -69,13 +69,15 @@ static tim_id_t timers_cant = TIMER_ID_INTERNAL+1;
 
 void timerInit(void)
 {
-    static bool init = false;
-    if (!init)
-    {
-        init = true;
-        systickInit(timerIsr);
-    }
+    static bool yaInit = false;
+    if (yaInit)
+        return;
+    
+    systickInit(timer_isr); // init peripheral
+    
+    yaInit = true;
 }
+
 
 tim_id_t timerGetId(void)
 {
@@ -113,26 +115,52 @@ void timerStart(tim_id_t id, ttick_t ticks, uint8_t mode, tim_callback_t callbac
     }
 }
 
-
 void timerResume(tim_id_t id)
 {
-    // Si esta pausado el timer
-    if (!timers[id].running)
+#ifdef TIMER_DEVELOPMENT_MODE
+    if (id < timers_cant)
+#endif // TIMER_DEVELOPMENT_MODE
     {
-        // Reanudo el timer
-        timers[id].cnt = timers[id].period;
-        timers[id].running = 1;
+        // Si esta pausado el timer
+        if (!timers[id].running)
+        {
+            // Reanudo el timer
+            timers[id].cnt = timers[id].period;
+            timers[id].running = 1;
+        }
     }
 }
 
-
 void timerPause(tim_id_t id)
 {
-    // Apago el timer
-    timers[id].running = 0;
+#ifdef TIMER_DEVELOPMENT_MODE
+    if (id < timers_cant)
+#endif // TIMER_DEVELOPMENT_MODE
+    {
+        // Apago el timer
+        timers[id].running = 0;
 
-    // y bajo el flag
-    timers[id].expired = 0;
+        // y bajo el flag
+        timers[id].expired = 0;
+    }
+}
+
+void timerRestart(tim_id_t id)
+{
+#ifdef TIMER_DEVELOPMENT_MODE
+    if (id < timers_cant)
+#endif // TIMER_DEVELOPMENT_MODE
+    {
+        // disable timer
+        timers[id].running = 0;
+
+        // configure timer
+        timers[id].cnt = timers[id].period;
+        timers[id].expired = 0;
+
+        // enable timer
+        timers[id].running = 1;
+    }
 }
 
 bool timerRunning(tim_id_t id)
@@ -151,13 +179,11 @@ bool timerExpired(tim_id_t id)
     return hasExpired;
 }
 
-
 void timerDelay(ttick_t ticks)
 {
     timerStart(TIMER_ID_INTERNAL, ticks, TIM_MODE_SINGLESHOT, NULL);
     while (!timerExpired(TIMER_ID_INTERNAL));
 }
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -165,7 +191,7 @@ void timerDelay(ttick_t ticks)
  *******************************************************************************
  ******************************************************************************/
 
-static void timerIsr(void)
+static void timer_isr(void)
 {
     // decremento los timers activos
     uint8_t timerIndex;
@@ -199,6 +225,5 @@ static void timerIsr(void)
         }
     }
 }
-
 
 /******************************************************************************/
