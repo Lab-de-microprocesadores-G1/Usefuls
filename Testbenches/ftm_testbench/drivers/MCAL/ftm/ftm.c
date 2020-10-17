@@ -303,19 +303,22 @@ void FTM_IRQDispatch(ftm_instance_t instance)
 	}
 	else
 	{
+		// Save current status of the interruption flags for all channels
+		uint32_t status = ftmInstances[instance]->STATUS;
+
+		// Clear flags in the FlexTimer status register
+		ftmInstances[instance]->STATUS = 0x00000000;
+
 		for (ftm_channel_t channel = 0; channel < FTM_CHANNEL_COUNT; channel++)
 		{
-			if (ftmInstances[instance]->CONTROLS[channel].CnSC & FTM_CnSC_CHF_MASK)
-			{
-				// Clear the interruption flag
-				ftmInstances[instance]->CONTROLS[channel].CnSC &= (~FTM_CnSC_CHF_MASK);
+			// Fetch channel interruption callback
+			ch_callback channelCallback = ftmChannelCallbacks[instance][channel];
 
-				// Calls the callback registered (if any)
-				ch_callback channelCallback = ftmChannelCallbacks[instance][channel];
-				if (channelCallback)
-				{
-					channelCallback(ftmInstances[instance]->CONTROLS[channel].CnV);
-				}
+			// If interruption callback registered, verify if flag was active...
+			// laziness will prevent shifting and masking status when no callback registered
+			if (channelCallback && (status & CHANNEL_MASK(channel)))
+			{
+				channelCallback(ftmInstances[instance]->CONTROLS[channel].CnV);
 			}
 		}
 	}
