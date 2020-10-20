@@ -43,6 +43,17 @@
  *******************************************************************************
  ******************************************************************************/
 
+uint32_t getNumberLength(uint32_t number)
+{
+    uint32_t length = 0;
+    while (number)
+    {
+        number /= 10;
+        length++;
+    }
+    return length;
+}
+
 uint8_t number2ASCII(uint8_t number)
 {
 	return '0' + number;
@@ -51,7 +62,7 @@ uint8_t number2ASCII(uint8_t number)
 uint32_t array2Number(uint8_t *arrayNumber, size_t length)
 {
     uint32_t number = 0;
-    uint32_t weight = pow(10, length - 1);
+    uint32_t weight = (uint32_t)pow(10, length - 1);
     for (uint8_t arrayIndex = 0; arrayIndex < length; arrayIndex++)
     {
         number += arrayNumber[arrayIndex] * weight;

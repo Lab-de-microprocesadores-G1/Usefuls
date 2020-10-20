@@ -46,7 +46,7 @@ void arrayRemove(void* array, uint32_t index, size_t arraySize, size_t elementSi
 {
 	for (uint32_t arrayIndex = index + 1; arrayIndex < arraySize; arrayIndex++)
 	{
-		memcpy((uint8_t*)array + arrayIndex - 1, (uint8_t*)array + arrayIndex, elementSize);
+		memcpy((uint8_t*)array + (arrayIndex - 1) * elementSize, (uint8_t*)array + arrayIndex * elementSize, elementSize);
 	}
 }
 

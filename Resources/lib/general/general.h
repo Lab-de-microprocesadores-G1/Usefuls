@@ -30,6 +30,12 @@
  ******************************************************************************/
 
 /**
+ * @brief Returns the length of a number, that is the amount of non-zero digits
+ * @param number	Number to calculate its length
+ */
+uint32_t getNumberLength(uint32_t number);
+
+/**
  * @brief Converts the number to its ASCII representation
  * 		number 2 -> character '2'
  * @param number		Number to be converted
