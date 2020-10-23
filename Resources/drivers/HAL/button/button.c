@@ -25,6 +25,11 @@
 #define TYPEMATIC_MS			500 // 500ms for debug
 
 #define	BUTTON_DEVELOPMENT_MODE 1
+#define BUTTON_DEBUG_MODE
+
+#ifdef BUTTON_DEBUG_MODE
+#define BUTTON_ISR_DEV BUTTON_ISR_DEV_PIN
+#endif
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -118,6 +123,11 @@ void buttonInit(void)
 		gpioMode(buttons[i].pinNumber, INPUT | pull );
 		pull = 0;
 	}
+
+  #ifdef BUTTON_DEBUG_MODE
+  gpioWrite(BUTTON_ISR_DEV, LOW);
+  gpioMode(BUTTON_ISR_DEV, OUTPUT);
+  #endif
 }
 
 void buttonSubscribe(button_id_t id, button_events_t ev, void (*callback) (void))
@@ -149,6 +159,10 @@ bool isButtonPressed(button_id_t id)
 
 void handleCount(void)
 {
+  	#ifdef BUTTON_DEBUG_MODE
+  	gpioWrite(BUTTON_ISR_DEV, HIGH);
+  	#endif
+
 	uint8_t i;
 	bool active;
 	buttonFsmEv_t ev;
@@ -201,6 +215,10 @@ void handleCount(void)
 			buttons[i].debounceTicks--;
 		}
 	}
+  
+  	#ifdef BUTTON_DEBUG_MODE
+  	gpioWrite(BUTTON_ISR_DEV, LOW);
+  	#endif
 }
 
 
