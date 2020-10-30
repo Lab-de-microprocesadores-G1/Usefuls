@@ -72,16 +72,44 @@ bool isEmpty(queue_t* queue)
 	return size(queue) == 0;
 }
 
-size_t size(queue_t* queue)
+bool isFull(queue_t* queue)
 {
-	size_t size = 0;
 #ifdef QUEUE_DEVELOPMENT_MODE
 	if (queue)
 #endif
 	{
-		size = (queue->queueSize + queue->rear - queue->front + 1) % queue->queueSize;
+		return size(queue) == (queue->queueSize - 1);
 	}
-	return size;
+#ifdef QUEUE_DEVELOPMENT_MODE
+	else
+	{
+		return false;
+	}
+#endif
+}
+
+size_t size(queue_t* queue)
+{
+	size_t currentSize = 0;
+#ifdef QUEUE_DEVELOPMENT_MODE
+	if (queue)
+#endif
+	{
+		currentSize = (queue->queueSize + queue->rear - queue->front + 1) % queue->queueSize;
+	}
+	return currentSize;
+}
+
+size_t emptySize(queue_t* queue)
+{
+	size_t currentSize = 0;
+#ifdef QUEUE_DEVELOPMENT_MODE
+	if (queue)
+#endif
+	{
+		currentSize = (queue->queueSize - 1) - size(queue);
+	}
+	return currentSize;
 }
 
 bool push(queue_t* queue, void* element)
@@ -124,6 +152,24 @@ void* pop(queue_t* queue)
 	// Return the variable of result
 	return element;
 }
+
+void popMany(queue_t* queue, void* destination, size_t length)
+{
+#ifdef QUEUE_DEVELOPMENT_MODE
+	if (queue)
+#endif
+	{
+		size_t len1 = ((queue->front + length) < queue->queueSize) ? length : queue->queueSize - 1 - queue->front;
+		size_t len2 = ((queue->front + length) < queue->queueSize) ? 0 		: length - len1;
+		memcpy(destination, queue->buffer + queue->elementSize * queue->front, len1 * queue->elementSize);
+		if (len2 > 0)
+		{
+			memcpy( (uint8_t *) destination + len1 * queue->elementSize, queue->buffer, len2 * queue->elementSize);
+		}
+		queue->front = (queue->front + length) % queue->queueSize;
+	}
+}
+
 
 /*******************************************************************************
  *******************************************************************************

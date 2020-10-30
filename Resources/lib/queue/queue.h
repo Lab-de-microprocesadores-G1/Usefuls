@@ -64,11 +64,23 @@ queue_t createQueue(void* buffer, size_t queueSize, size_t elementSize);
  */
 bool isEmpty(queue_t* queue);
 
-/*
+/**
+ * @brief Returns whether the queue is full or not
+ * @param queue		Pointer to the Queue instance
+ */
+bool isFull(queue_t* queue);
+
+/**
  * @brief Returns the current size of the queue
  * @param queue		Pointer to the Queue instance
  */
 size_t size(queue_t* queue);
+
+/**
+ * @brief Returns the empty space for new elements in the queue
+ * @param queue		Pointer to the Queue instance
+ */
+size_t emptySize(queue_t* queue);
 
 /**
  * @brief Clear the Queue instance
@@ -90,6 +102,15 @@ bool push(queue_t* queue, void* element);
  * ¡The persistance of the element is temporary! Use it at your own risk.
  */
 void* pop(queue_t* queue);
+
+/**
+ * @brief Copies the given amount of elements from the queue to the destination 
+ * buffer and pops them from the queue.
+ * @param queue			Pointer to the Queue instance
+ * @param destination	Pointer to the destination buffer
+ * @param length		Number of elements to be copied
+ */
+void popMany(queue_t* queue, void* destination, size_t length);
 
 /*******************************************************************************
  ******************************************************************************/
