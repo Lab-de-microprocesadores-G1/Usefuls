@@ -102,7 +102,7 @@ static uart_instance_t  uartInstances[UART_AMOUNT] = {
   { 	3, 					6		},
   { 	3, 					6		},
   { 	3, 					6		},
-  { 	3, 					6		},
+  { 	1, 					1		},
   { 	3, 					6		}
 };
 
@@ -342,7 +342,7 @@ void readFifo(uart_id_t id)
   // Get the buffer count, the current amount of elements in the receiver FIFO,
   // and push every element from the FIFO to the driver receiver queue
   bufferCount = uart->RCFIFO;
-  if (emptySize(&uartInstance[id].rxQueue) >= bufferCount)
+  if (emptySize(&uartInstance->rxQueue) >= bufferCount)
   {
     while (bufferCount)
     {
@@ -355,7 +355,7 @@ void readFifo(uart_id_t id)
         word = 0x0000;
       }
       word = (word & 0x0100) | uart->D;
-      push(&uartInstance[id].rxQueue, &word);
+      push(&uartInstance->rxQueue, &word);
       bufferCount--;
     }
   }
@@ -438,11 +438,11 @@ static void UART_RxDispatcher(uart_id_t id)
 
   // When the current size of the receiver queue is higher than the frame size
   // configured for interruption, the user is notified via the given callback
-  if (size(&uartInstance[id].rxQueue) >= uartInstance[id].rxSize)
+  if (size(&uartInstance->rxQueue) >= uartInstance->rxSize)
   {
-    if (uartInstance[id].rxCallback)
+    if (uartInstance->rxCallback)
     {
-      uartInstance[id].rxCallback();
+      uartInstance->rxCallback();
     }
   }
 }
