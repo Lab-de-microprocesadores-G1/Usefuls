@@ -64,7 +64,7 @@
 **     - rev. 1.0 (2013-08-12)
 **         Initial version.
 **     - rev. 2.0 (2013-10-29)
-**         Register accessor macros added to the memory map.
+**         Register aCccessor macros added to the memory map.
 **         Symbols for Processor Expert memory map compatibility added to the memory map.
 **         Startup file for gcc has been updated according to CMSIS 3.2.
 **         System initialization updated.
