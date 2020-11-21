@@ -176,6 +176,7 @@ void i2cStartTransaction(i2c_id_t id, uint8_t address, uint8_t* writeBuffer, siz
 
 	  // Sets the transfer direction to transmit, and starts the communication, taking control
 	  // of the I2C bus as Master, sending the address + R/W to check if slave found
+	  i2cPointers[id]->C1 = (i2cPointers[id]->C1 & ~I2C_C1_TXAK_MASK) | I2C_C1_TXAK(0);
 	  i2cPointers[id]->C1 = (i2cPointers[id]->C1 & ~I2C_C1_TX_MASK) | I2C_C1_TX(1);
 	  i2cPointers[id]->C1 = (i2cPointers[id]->C1 & ~I2C_C1_MST_MASK) | I2C_C1_MST(1);
 	  i2cPointers[id]->D = ((address & 0x0000007F) << 1) | 0x00000000;
