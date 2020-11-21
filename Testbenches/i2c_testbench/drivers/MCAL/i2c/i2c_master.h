@@ -22,6 +22,8 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// Declaring I2C instance id's, used to refer to the
+// MCU I2C instance used
 typedef enum {
   I2C_INSTANCE_0,
   I2C_INSTANCE_1,
@@ -29,11 +31,12 @@ typedef enum {
   I2C_INSTANCE_COUNT
 } i2c_id_t;
 
+// Declaring I2C peripheral state to get from query
 typedef enum {
-  I2C_STATE_IDLE,
-  I2C_STATE_IN_PROGRESS,
-  I2C_STATE_FINISHED,
-  I2C_STATE_ERROR
+  I2C_STATE_IDLE,			// Idle
+  I2C_STATE_IN_PROGRESS,	// Currently transmitting or receiving
+  I2C_STATE_FINISHED,		// Already finished communication
+  I2C_STATE_ERROR			// Some error occurred
 } i2c_state_t;
 
 /*******************************************************************************
