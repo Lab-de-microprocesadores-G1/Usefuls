@@ -121,7 +121,7 @@
 							<tool id="com.crt.advproject.gas.exe.debug.225790415" name="MCU Assembler" superClass="com.crt.advproject.gas.exe.debug">
 								<option id="com.crt.advproject.gas.thumb.1985785434" name="Thumb mode" superClass="com.crt.advproject.gas.thumb" value="true" valueType="boolean"/>
 								<option id="com.crt.advproject.gas.arch.840464441" name="Architecture" superClass="com.crt.advproject.gas.arch" value="com.crt.advproject.gas.target.cm4" valueType="enumerated"/>
-								<option id="gnu.both.asm.option.flags.crt.1432448172" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt"/>
+								<option id="gnu.both.asm.option.flags.crt.1432448172" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt" value="-c -x assembler-with-cpp -D__REDLIB__" valueType="string"/>
 								<option id="gnu.both.asm.option.include.paths.1219915142" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../board"/>
 									<listOptionValue builtIn="false" value="../source"/>
@@ -130,6 +130,7 @@
 									<listOptionValue builtIn="false" value="../CMSIS"/>
 									<listOptionValue builtIn="false" value="../utilities"/>
 									<listOptionValue builtIn="false" value="../startup"/>
+									<listOptionValue builtIn="false" value="../lib"/>
 								</option>
 								<option id="gnu.both.asm.option.warnings.nowarn.1230690563" name="Suppress warnings (-W)" superClass="gnu.both.asm.option.warnings.nowarn"/>
 								<option id="gnu.both.asm.option.version.558123895" name="Announce version (-v)" superClass="gnu.both.asm.option.version"/>
@@ -249,6 +250,7 @@
 						<entry flags="LOCAL|VALUE_WORKSPACE_PATH" kind="sourcePath" name="CMSIS"/>
 						<entry flags="LOCAL|VALUE_WORKSPACE_PATH" kind="sourcePath" name="board"/>
 						<entry flags="LOCAL|VALUE_WORKSPACE_PATH" kind="sourcePath" name="drivers"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="lib"/>
 						<entry excluding="app_callback.c|app_blocking.c" flags="LOCAL|VALUE_WORKSPACE_PATH" kind="sourcePath" name="source"/>
 						<entry flags="LOCAL|VALUE_WORKSPACE_PATH" kind="sourcePath" name="startup"/>
 						<entry flags="LOCAL|VALUE_WORKSPACE_PATH" kind="sourcePath" name="utilities"/>
@@ -373,7 +375,7 @@
 							<tool id="com.crt.advproject.gas.exe.release.890845983" name="MCU Assembler" superClass="com.crt.advproject.gas.exe.release">
 								<option id="com.crt.advproject.gas.thumb.429909566" name="Thumb mode" superClass="com.crt.advproject.gas.thumb" value="true" valueType="boolean"/>
 								<option id="com.crt.advproject.gas.arch.1755417784" name="Architecture" superClass="com.crt.advproject.gas.arch" value="com.crt.advproject.gas.target.cm4" valueType="enumerated"/>
-								<option id="gnu.both.asm.option.flags.crt.2077391086" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt"/>
+								<option id="gnu.both.asm.option.flags.crt.2077391086" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt" value="-c -x assembler-with-cpp -D__REDLIB__" valueType="string"/>
 								<option id="gnu.both.asm.option.include.paths.1334027793" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../board"/>
 									<listOptionValue builtIn="false" value="../source"/>
@@ -636,4 +638,5 @@
 		<core>cm4</core>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="refreshScope"/>
 </cproject>

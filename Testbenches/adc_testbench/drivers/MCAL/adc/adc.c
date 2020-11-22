@@ -8,6 +8,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <stdio.h>
 #include "adc.h"
 #include "board.h"
 #include "MK64F12.h"
@@ -57,15 +58,15 @@ void ADC0_IRQHandler(void);
 void ADC1_IRQHandler(void);
 
 // Dispatcher for IRQs, in callback mode, calls the onConversionCompleted of id.
-static void adcIRQDispatcher(adc_instance_id_t id)
+static void adcIRQDispatcher(adc_instance_id_t id);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static adc_instance_t adcInstances[ADC_INSTANCE_COUNT] = {
-    //    PIN      ALT    ADC_ID    ADC_CHANNEL
-    { PIN_ADC_INSTANCE_0, 0, ADC_0, 12  }  // ADC_INSTANCE_0
+static adc_instance_t adcInstances[] = {
+    //    PIN      ALT  ADC_ID  ADC_CHANNEL
+    { 	PIN_ADC_0, 0,	ADC_0, 		12  	}  // ADC_INSTANCE_0
 };
 
 // ADC registers pointers
@@ -143,7 +144,7 @@ bool adcStartConversion(adc_instance_id_t id)
     pointer->SC1[SC1_REG_DEFAULT] = ADC_SC1_AIEN(1) | ADC_SC1_DIFF(config.diff) | ADC_SC1_ADCH(adcInstances[id].channel);
 
     // Set current ID being used
-    if (instance.adcId == ADC0)
+    if (instance.adcId == ADC_0)
     {
       ADC0CurrentID = id;
     }
@@ -205,10 +206,10 @@ void adcOnConversion(adc_instance_id_t id, conversion_callback_t callback)
 
 void adcIRQDispatcher(adc_instance_id_t id)
 {
-  adc_id_t adc = adcInstances[id].adcID;
+  adc_id_t adc = adcInstances[id].adcId;
   uint32_t sample = adcPointers[adc]->R[SC1_REG_DEFAULT];
   
-  if(adcInstances[id].onConversionCompleted == NULL)
+  if (adcInstances[id].onConversionCompleted == NULL)
   {
     adcInstances[id].conversionCompleted = true;
   }

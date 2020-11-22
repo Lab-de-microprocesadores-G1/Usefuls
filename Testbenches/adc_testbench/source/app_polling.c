@@ -8,9 +8,9 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "adc.h"
-#include "uart.h"
-#include "string.h"
+#include <string.h>
+#include "drivers/MCAL/adc/adc.h"
+#include "drivers/MCAL/uart/uart.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -35,8 +35,7 @@
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static char * msg = "Potentiometer value = 000";
-
+static char msg[50];
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -56,12 +55,13 @@ void appInit (void)
         .usingAverage   = 0 
     };
     
-    adcConfig(ADC_INSTANCE_0, config);
+    adcConfig(ADC_POTENTIOMETER, config);
 
     // UART driver init
     uart_cfg_t uartConfig = {
         .baudRate = UART_BAUD_RATE_9600,
-    }
+    };
+
     uartInit(UART_INSTANCE_0, uartConfig);
 }
 
@@ -71,8 +71,11 @@ void appRun (void)
     if (adcConversionCompleted(ADC_POTENTIOMETER))
     {
         uint32_t conversion = adcGetConversion(ADC_POTENTIOMETER);
-        sprintf(msg + strlen(msg) - 4,"%i", conversion);
-        uartWriteMsg(UART_INSTANCE_0, msg, strlen(msg));
+    	sprintf(msg, "ADC Measurement %d\r\n", conversion);
+    	if (uartCanTx(UART_INSTANCE_0, strlen(msg)))
+    	{
+            uartWriteMsg(UART_INSTANCE_0, msg, strlen(msg));
+    	}
     }
 
     if (adcAvailable(ADC_POTENTIOMETER))
