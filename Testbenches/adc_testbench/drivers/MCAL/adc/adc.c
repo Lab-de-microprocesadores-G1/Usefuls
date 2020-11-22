@@ -207,7 +207,7 @@ void adcOnConversion(adc_instance_id_t id, conversion_callback_t callback)
 void adcIRQDispatcher(adc_instance_id_t id)
 {
   adc_id_t adc = adcInstances[id].adcId;
-  uint32_t sample = adcPointers[adc]->R[SC1_REG_DEFAULT];
+  adcInstances[id].lastConversion = adcPointers[adc]->R[SC1_REG_DEFAULT];
   
   if (adcInstances[id].onConversionCompleted == NULL)
   {
@@ -215,7 +215,7 @@ void adcIRQDispatcher(adc_instance_id_t id)
   }
   else
   {
-    adcInstances[id].onConversionCompleted(sample);
+    adcInstances[id].onConversionCompleted(adcInstances[id].lastConversion);
   }
 }
 
