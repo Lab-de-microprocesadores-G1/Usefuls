@@ -114,7 +114,6 @@ size_t emptySize(queue_t* queue)
 
 bool push(queue_t* queue, void* element)
 {
-	// By default, succeed always :D
 	bool succeed = false;
 
 #ifdef QUEUE_DEVELOPMENT_MODE
@@ -130,6 +129,25 @@ bool push(queue_t* queue, void* element)
 			succeed = true;
 		}
 	}
+
+	// Return the succeed status
+	return succeed;
+}
+
+bool pushTrash(queue_t* queue, size_t len)
+{
+	bool succeed = false;
+#ifdef QUEUE_DEVELOPMENT_MODE
+	if (queue)
+#endif
+	{
+		if ((queue->rear + len + 1) % queue->queueSize != queue->front)
+		{
+			queue->rear = (queue->rear + len) % queue->queueSize;
+			succeed = true;
+		}
+	}
+
 	// Return the succeed status
 	return succeed;
 }
@@ -169,7 +187,6 @@ void popMany(queue_t* queue, void* destination, size_t length)
 		queue->front = (queue->front + length) % queue->queueSize;
 	}
 }
-
 
 /*******************************************************************************
  *******************************************************************************
