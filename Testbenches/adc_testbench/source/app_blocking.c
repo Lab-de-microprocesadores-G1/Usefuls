@@ -53,7 +53,7 @@ void appInit (void)
 	boardInit();
 
 	// Initialize the UART peripheral
-	uart_cfg_t uartSettings = { .baudRate = UART_BAUD_RATE_9600 };
+	uart_cfg_t uartSettings = { .baudRate = UART_BAUD_RATE_9600	};
 	uartInit(UART_INSTANCE_0, uartSettings);
 
 	// Initialize the ADC peripheral
@@ -65,14 +65,11 @@ void appRun (void)
 {
     // Application iterative tasks, every loop runs this function
 	sample = adcBlockingConversion(ADC_POTENTIOMETER);
-	sprintf(buffer, "ADC Measuremente %d", sample);
+	sprintf(buffer, "ADC Measurement %d\r\n", sample);
 	if (uartCanTx(UART_INSTANCE_0, strlen(buffer)))
 	{
 		uartWriteMsg(UART_INSTANCE_0, buffer, strlen(buffer));
 	}
-
-	// Delay... ¿why? there is no why
-	for (uint32_t i = 0 ; i < 500000 ; i++);
 }
 
 /*******************************************************************************

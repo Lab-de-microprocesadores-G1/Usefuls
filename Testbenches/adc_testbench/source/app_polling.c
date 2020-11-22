@@ -52,7 +52,8 @@ void appInit (void)
     adc_cfg_t config = {
         .diff           = 0,
         .resolution     = ADC_8_BIT_SINGLE_CONV,
-        .usingAverage   = 0 
+        .usingAverage   = 1,
+		.averageSamples = ADC_32_SAMPLES_AVERAGE
     };
     
     adcConfig(ADC_POTENTIOMETER, config);
