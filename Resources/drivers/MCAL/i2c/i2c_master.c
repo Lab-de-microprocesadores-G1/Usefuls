@@ -117,7 +117,7 @@ static uint8_t 	i2cPinout[I2C_INSTANCE_COUNT][I2C_PINOUT_COUNT] = {
 // Look-up table for the pin alternative
 static uint8_t i2cAlternative[I2C_INSTANCE_COUNT][I2C_PINOUT_COUNT] = {
   //   	I2C_SCL			  		I2C_SDA
-  {		5					,	5		},		// I2C INSTANCE 0
+  {		5					,	5			},		// I2C INSTANCE 0
   { 	6					,	6			},		// I2C INSTANCE 1
   { 	5					,	5			}		// I2C INSTANCE 2
 };
@@ -140,10 +140,10 @@ void i2cMasterInit(i2c_id_t id, uint32_t baudRate)
   SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTC_MASK;
   SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK | SIM_SCGC5_PORTE_MASK;
 
-  // Enabling the PCR alternative for the pin out selected in the instance
+  // Enabling the PCR alternative for the pin out selected in the instance and Open Drain output
   for (uint8_t i = 0 ; i < I2C_PINOUT_COUNT ; i++)
   {
-    ports[PIN2PORT(i2cPinout[id][i])]->PCR[PIN2NUM(i2cPinout[id][i])] = PORT_PCR_MUX(i2cAlternative[id][i]);
+    ports[PIN2PORT(i2cPinout[id][i])]->PCR[PIN2NUM(i2cPinout[id][i])] = PORT_PCR_MUX(i2cAlternative[id][i]) | PORT_PCR_ODE(1);
   }
 
   // Configure the frequency of the peripheral to get the desired baud rate
