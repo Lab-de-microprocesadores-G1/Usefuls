@@ -119,7 +119,10 @@ void appRun (void)
 	if (onlyOnce)
 	{
 		onlyOnce = false;
-		// writeAndLog(ACC_CTRL_REG_1_ADDRESS, 0x01);
+		writeAndLog(ACC_CTRL_REG_1_ADDRESS, 0x01);
+
+		for(uint32_t i = 0 ; i < 500000 ; i++);
+
 		readAndLog("Respuesta a CTRL_REG_1 ", ACC_CTRL_REG_1_ADDRESS);
 	}
 
