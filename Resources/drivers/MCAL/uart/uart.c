@@ -326,6 +326,12 @@ bool uartIsTxMsgComplete(uint8_t id)
   return prevFlag;
 }
 
+bool uartCanTx(uart_id_t id, size_t length)
+{
+  queue_t *txQueue = &(uartInstances[id].txQueue);
+  return length <= emptySize(txQueue);
+}
+
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS

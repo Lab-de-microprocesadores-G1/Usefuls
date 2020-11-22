@@ -128,6 +128,13 @@ bool uartHasRxMsg(uart_id_t id);
 bool uartIsTxMsgComplete(uart_id_t id);
 
 /**
+ * @brief Check if can send words
+ * @param id		UART's number
+ * @param length	Amount of words to be sent
+ */
+bool uartCanTx(uart_id_t id, size_t length);
+
+/**
  * @brief Check how many words were received
  * @param id 		UART's number
  * @return Quantity of received words
