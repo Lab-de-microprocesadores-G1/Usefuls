@@ -40,7 +40,7 @@ typedef struct {
   const uint8_t         adcId;                    // ADC Peripheral used
   const uint8_t         channel;                  // ADC Channel used
   adc_cfg_t             config;                   // Instance configuration
-  uint32_t              lastConversion;           // Last conversion done on this instance
+  int16_t              lastConversion;           // Last conversion done on this instance
   conversion_callback_t onConversionCompleted;    // Callback on conversion completed
   bool                  conversionCompleted;      // Flag of conversion completed
 } adc_instance_t; 
@@ -66,7 +66,7 @@ static void adcIRQDispatcher(adc_instance_id_t id);
 
 static adc_instance_t adcInstances[] = {
     //    PIN      ALT  ADC_ID  ADC_CHANNEL
-    { 	PIN_ADC_0, 0,	ADC_0, 		12  	}  // ADC_INSTANCE_0
+    { 	PIN_ADC_0, 0,	ADC_0, 		1  	}  // ADC_INSTANCE_0
 };
 
 // ADC registers pointers
@@ -171,7 +171,7 @@ bool adcConversionCompleted(adc_instance_id_t id)
   return result;
 }
 
-uint32_t adcGetConversion(adc_instance_id_t id)
+int16_t adcGetConversion(adc_instance_id_t id)
 {
   return adcInstances[id].lastConversion;
 }
@@ -183,7 +183,7 @@ bool adcAvailable(adc_instance_id_t id)
   return (pointer->SC2 & ADC_SC2_ADACT_MASK) == 0;
 }
 
-uint32_t adcBlockingConversion(adc_instance_id_t id)
+int16_t adcBlockingConversion(adc_instance_id_t id)
 {
   if (adcStartConversion(id))
   {

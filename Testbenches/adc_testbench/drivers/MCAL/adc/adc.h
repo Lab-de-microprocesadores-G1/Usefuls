@@ -18,14 +18,14 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define INVALID_CONVERSION  0xFFFFFFFF
+#define INVALID_CONVERSION  0x0
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
 // Declaring the conversion completed callback
-typedef void (*conversion_callback_t)(uint32_t sample);
+typedef void (*conversion_callback_t)(int16_t sample);
 
 // Declaring the single-ended resolution configuration
 typedef enum {
@@ -105,7 +105,7 @@ bool adcConversionCompleted(adc_instance_id_t id);
  * @brief Returns the last conversion done on the given channel
  * @param id     ADC id (which refers to a combination of ADC hardware and Channel)
  */
-uint32_t adcGetConversion(adc_instance_id_t id);
+int16_t adcGetConversion(adc_instance_id_t id);
 
 /*********************
  * BLOCKING SERVICES *
@@ -121,7 +121,7 @@ bool adcAvailable(adc_instance_id_t id);
  * @brief Performs a blocking conversion with the adc
  * @param id     ADC id (which refers to a combination of ADC hardware and Channel)
  */
-uint32_t adcBlockingConversion(adc_instance_id_t id);
+int16_t adcBlockingConversion(adc_instance_id_t id);
 
 /***************************
  * EVENT-ORIENTED SERVICES *

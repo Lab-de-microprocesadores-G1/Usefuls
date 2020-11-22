@@ -8,8 +8,9 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-// #include "superpower.h"
-#include "adc.h"
+#include <string.h>
+#include "drivers/MCAL/adc/adc.h"
+#include "drivers/MCAL/uart/uart.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -22,7 +23,7 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// static void privateFunction(void);
+static void callback(uint32_t sample);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -34,7 +35,7 @@
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// static int myVar;
+static char msg[50];
 
 /*******************************************************************************
  *******************************************************************************
@@ -50,12 +51,23 @@ void appInit (void)
 
     //ADC configuration
     adc_cfg_t config = {
-        .diff         = 0,
-        .resolution   = ADC_8_BIT_SINGLE_CONV,
-        .usingAverage = 0
+        .diff         = 1,
+        .resolution   = ADC_9_BIT_DIFF_CONV,
+        .usingAverage = ADC_32_SAMPLES_AVERAGE
     };
     
-    addConfig(ADC_INSTANCE_0, config);
+    adcOnConversion(ADC_POTENTIOMETER, callback);
+
+    adcConfig(ADC_POTENTIOMETER, config);
+
+    // UART driver init
+    uart_cfg_t uartConfig = {
+        .baudRate = UART_BAUD_RATE_9600,
+    };
+
+    uartInit(UART_INSTANCE_0, uartConfig);
+
+    adcStartConversion(ADC_POTENTIOMETER);
     
 }
 
@@ -70,6 +82,20 @@ void appRun (void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+void callback(uint32_t sample)
+{
+    uint32_t conversion = adcGetConversion(ADC_POTENTIOMETER);
+	sprintf(msg, "ADC Measurement %d\r\n", conversion);
+	if (uartCanTx(UART_INSTANCE_0, strlen(msg)))
+	{
+        uartWriteMsg(UART_INSTANCE_0, msg, strlen(msg));
+	}
+
+    if (adcAvailable(ADC_POTENTIOMETER))
+    {
+        adcStartConversion(ADC_POTENTIOMETER);
+    }
+}
 
 
 /*******************************************************************************
