@@ -177,8 +177,8 @@ void popMany(queue_t* queue, void* destination, size_t length)
 	if (queue)
 #endif
 	{
-		size_t len1 = ((queue->front + length) < queue->queueSize) ? length : queue->queueSize - 1 - queue->front;
-		size_t len2 = ((queue->front + length) < queue->queueSize) ? 0 		: length - len1;
+		size_t len1 = ((queue->front + length) < queue->queueSize) ? length : queue->queueSize - queue->front;
+		size_t len2 = ((queue->front + length) < queue->queueSize) ? 0 	 : length - len1;
 		memcpy(destination, queue->buffer + queue->elementSize * queue->front, len1 * queue->elementSize);
 		if (len2 > 0)
 		{

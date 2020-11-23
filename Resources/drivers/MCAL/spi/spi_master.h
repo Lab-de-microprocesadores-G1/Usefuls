@@ -25,7 +25,7 @@
 // Declaring the ID of the SPI slaves
 typedef enum {
   SPI_SLAVE_0 = 0b000001,
-  SPI_SLAVE_1 = 0b000010 ,
+  SPI_SLAVE_1 = 0b000010,
   SPI_SLAVE_2 = 0b000100,
   SPI_SLAVE_3 = 0b001000,
   SPI_SLAVE_4 = 0b010000,
