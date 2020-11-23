@@ -292,6 +292,8 @@ static void FXOSPeriodicISR(void)
 
 static void FXOSOnI2CFinished(void)
 {
+  for(uint8_t i = 0 ; i < 1000 ; i++);
+
   if (context.status == ACC_STATUS_INITIALIZATION)
   {
     FXOSInitSequence(false);
