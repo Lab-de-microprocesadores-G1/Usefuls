@@ -99,7 +99,6 @@ typedef enum {
   FXOS_PL_HYS_7_DEG,
   FXOS_PL_HYS_11_DEG,
   FXOS_PL_HYS_14_DEG,
-  FXOS_PL_HYS_14_DEG,
   FXOS_PL_HYS_17_DEG,
   FXOS_PL_HYS_21_DEG,
   FXOS_PL_HYS_24_DEG
@@ -138,7 +137,7 @@ typedef struct {
 typedef struct {
   uint8_t DBCNTM      : 1;
   uint8_t PLEN        : 1;
-  uint8_t RESERVED    : 6
+  uint8_t RESERVED    : 6;
 } fxos_pl_cfg_reg_t;
 
 typedef struct {
@@ -310,6 +309,16 @@ static void FXOSOnI2CError(void)
 
 static void FXOSInitSequence(bool reset)
 {
+  fxos_pl_cfg_reg_t plConfig = { .PLEN = 1 };
+  fxos_bf_zcomp_reg_t bfConfig = {
+    .BKFR = FXOS_PL_BKFR_0,
+    .ZLOCK = FXOS_PL_BF_ZLOCK_13_DEG
+  };
+  fxos_pl_ths_reg_t thsConfig = {
+    .PL_THS = FXOS_PL_THS_15_DEG,
+    .HYS    = FXOS_PL_HYS_4_DEG
+  };
+
   if (reset)
   {
 	  context.counter = 0;
@@ -334,24 +343,15 @@ static void FXOSInitSequence(bool reset)
       break;
     
     case 2: // Enable Portrait-Landscape detection
-      fxos_pl_cfg_reg_t config = { .PLEN = 1 };
-      FXOSStartWrite(FXOS8700CQ_PL_CFG_REG, FXOS_REG2INT(config));
+      FXOSStartWrite(FXOS8700CQ_PL_CFG_REG, FXOS_REG2INT(plConfig));
       break;
     
     case 3: // Configure Z Compensation register
-      fxos_bf_zcomp_reg_t config = { 
-        .BKFR = FXOS_PL_BKFR_0,
-        .ZLOCK = FXOS_PL_BF_ZLOCK_13_DEG
-      };
-      FXOSStartWrite(FXOS8700CQ_PL_BF_ZCOMP_REG, FXOS_REG2INT(config));
+      FXOSStartWrite(FXOS8700CQ_PL_BF_ZCOMP_REG, FXOS_REG2INT(bfConfig));
       break;
     
     case 4: // Configure PL threshold and hysteresis
-      fxos_pl_ths_reg_t config = {
-        .PL_THS = FXOS_PL_THS_15_DEG,
-        .HYS    = FXOS_PL_HYS_4_DEG
-      };
-      FXOSStartWrite(FXOS8700CQ_PL_THS_REG, FXOS_REG2INT(config));
+      FXOSStartWrite(FXOS8700CQ_PL_THS_REG, FXOS_REG2INT(thsConfig));
       break;
     
     default:
@@ -361,6 +361,7 @@ static void FXOSInitSequence(bool reset)
 
 static void FXOSRunningSequence(bool reset)
 {
+  fxos_pl_status_reg_t status;
   if (reset)
   {
     acc_vector_t vector = {0, 0, 0};
@@ -381,7 +382,7 @@ static void FXOSRunningSequence(bool reset)
 
     case 2: // Start reading acceleration Y MSB
       context.acceleration[(context.outputBufferIndex + 1) % 2].x |= (context.readBuffer[0]);
-      context.acceleration[(context.outputBufferIndex + 1) % 2].x >> 2;
+      context.acceleration[(context.outputBufferIndex + 1) % 2].x >>= 2;
       FXOSStartRead(FXOS8700CQ_OUT_Y_MSB_REG);
       break;
 
@@ -392,7 +393,7 @@ static void FXOSRunningSequence(bool reset)
       
     case 4: // Start reading acceleration Z MSB
       context.acceleration[(context.outputBufferIndex + 1) % 2].y |= (context.readBuffer[0]);
-      context.acceleration[(context.outputBufferIndex + 1) % 2].y >> 2;
+      context.acceleration[(context.outputBufferIndex + 1) % 2].y >>= 2;
       FXOSStartRead(FXOS8700CQ_OUT_Z_MSB_REG);
       break;
       
@@ -403,16 +404,14 @@ static void FXOSRunningSequence(bool reset)
     
     case 6: // Start reading the orientation
       context.acceleration[(context.outputBufferIndex + 1) % 2].z |= (context.readBuffer[0]);
-      context.acceleration[(context.outputBufferIndex + 1) % 2].z >> 2;
+      context.acceleration[(context.outputBufferIndex + 1) % 2].z >>= 2;
       FXOSStartRead(FXOS8700CQ_PL_STATUS_REG);
       break;
 
     case 7: // End measurement cycle...
-      fxos_pl_status_reg_t status = FXOS_INT2REG((context.readBuffer[0]), fxos_pl_status_reg_t);
-      context.orientation[(context.outputBufferIndex + 1) % 2] = {
-        .landscapePortrait = status.LAPO,
-        .backFront         = status.BAFRO
-      };
+      status = FXOS_INT2REG((context.readBuffer[0]), fxos_pl_status_reg_t);
+      context.orientation[(context.outputBufferIndex + 1) % 2].landscapePortrait = status.LAPO;
+      context.orientation[(context.outputBufferIndex + 1) % 2].backFront = status.BAFRO;
       context.updated = true;
       context.outputBufferIndex = (context.outputBufferIndex + 1) % 2;
       break;
