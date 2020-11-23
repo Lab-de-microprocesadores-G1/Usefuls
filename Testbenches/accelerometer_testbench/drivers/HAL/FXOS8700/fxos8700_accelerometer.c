@@ -127,28 +127,28 @@ typedef struct {
 *********************************/
 
 typedef struct {
-  uint8_t NEWLP       : 1;
-  uint8_t LO          : 1;
-  uint8_t RESERVED    : 3;
-  uint8_t LAPO        : 2;
   uint8_t BAFRO       : 1;
+  uint8_t LAPO        : 2;
+  uint8_t RESERVED    : 3;
+  uint8_t LO          : 1;
+  uint8_t NEWLP       : 1;
 } fxos_pl_status_reg_t;
 
 typedef struct {
-  uint8_t DBCNTM      : 1;
-  uint8_t PLEN        : 1;
   uint8_t RESERVED    : 6;
+  uint8_t PLEN        : 1;
+  uint8_t DBCNTM      : 1;
 } fxos_pl_cfg_reg_t;
 
 typedef struct {
-  uint8_t BKFR        : 2;
-  uint8_t RESERVED    : 3;
   uint8_t ZLOCK       : 3;
+  uint8_t RESERVED    : 3;
+  uint8_t BKFR        : 2;
 } fxos_bf_zcomp_reg_t;
 
 typedef struct {
-  uint8_t PL_THS      : 5;
   uint8_t HYS         : 3;
+  uint8_t PL_THS      : 5;
 } fxos_pl_ths_reg_t;
 
 /*******************************************************************************
@@ -336,12 +336,12 @@ static void FXOSInitSequence(bool reset)
       if (context.readBuffer[0] == FXOS8700CQ_WHOAMI_VALUE)
       {
         // Set FXOS to active mode
-        FXOSStartWrite(FXOS8700CQ_CTRL_REG1, 1);
-		  }
+        FXOSStartWrite(FXOS8700CQ_CTRL_REG1, 0);
+	  }
       else 
       {
-		    context.status = ACC_STATUS_ERROR;
-		  }
+		context.status = ACC_STATUS_ERROR;
+	  }
       break;
     
     case 2: // Enable Portrait-Landscape detection
@@ -356,9 +356,14 @@ static void FXOSInitSequence(bool reset)
       FXOSStartWrite(FXOS8700CQ_PL_THS_REG, FXOS_REG2INT(thsConfig));
       break;
     
-    case 5: // Change to running state
-      context.status = ACC_STATUS_RUNNING;
+    case 5: // Set the accelerometer active
+      FXOSStartWrite(FXOS8700CQ_CTRL_REG1, 1);
       break;
+
+    case 6: // Change to running state
+        context.status = ACC_STATUS_RUNNING;
+    	break;
+
     default:
       break;
   }

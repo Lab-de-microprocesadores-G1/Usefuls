@@ -79,7 +79,7 @@ void appRun (void)
 		{
 			if (FXOSGetAcceleration(&acceleration))
 			{
-				sprintf(buffer, "Acceleration %d , %d , %d\r\n", acceleration.x, acceleration.y, acceleration.z);
+				// sprintf(buffer, "Acceleration %d , %d , %d\r\n", acceleration.x, acceleration.y, acceleration.z);
 				if (uartCanTx(UART_INSTANCE_0, strlen(buffer)))
 				{
 					uartWriteMsg(UART_INSTANCE_0, (const word_t*)buffer, strlen(buffer));
