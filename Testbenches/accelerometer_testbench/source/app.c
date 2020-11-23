@@ -67,7 +67,7 @@ void appInit (void)
 	uartInit(UART_INSTANCE_0, uartSetting);
 
 	// Initialize the accelerometer
-	FXOSInit();
+	FXOSInit(FXOS_INIT_DEFAULT);
 }
 
 /* Called repeatedly in an infinite loop */
