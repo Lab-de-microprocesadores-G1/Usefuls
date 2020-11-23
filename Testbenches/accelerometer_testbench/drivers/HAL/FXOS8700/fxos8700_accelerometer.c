@@ -292,7 +292,7 @@ static void FXOSPeriodicISR(void)
 
 static void FXOSOnI2CFinished(void)
 {
-  for(uint8_t i = 0 ; i < 1000 ; i++);
+  for(uint32_t i = 0 ; i < 1000 ; i++);
 
   if (context.status == ACC_STATUS_INITIALIZATION)
   {
@@ -356,6 +356,9 @@ static void FXOSInitSequence(bool reset)
       FXOSStartWrite(FXOS8700CQ_PL_THS_REG, FXOS_REG2INT(thsConfig));
       break;
     
+    case 5: // Change to running state
+      context.status = ACC_STATUS_RUNNING;
+      break;
     default:
       break;
   }
