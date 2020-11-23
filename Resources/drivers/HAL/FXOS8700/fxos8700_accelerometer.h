@@ -18,6 +18,9 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// Declaring accelerometer callback
+typedef void (*fxos_callback_t)(void);
+
 // For portrait-landscape detection, z-lockout angle determines the limit angle
 // required to detect the orientation.
 typedef enum {
@@ -99,8 +102,8 @@ typedef struct {
 
 #define FXOS_ZLOCK_DEFAULT				FXOS_ZLOCK_40_DEG
 #define FXOS_BKFR_DEFAULT				FXOS_BKFR_THRESHOLD_0
-#define FXOS_THRESHOLD_DEFAULT			FXOS_THRESHOLD_45_DEG
-#define FXOS_HYSTERESIS_DEFAULT			FXOS_HYSTERESIS_17_DEG
+#define FXOS_THRESHOLD_DEFAULT			FXOS_THRESHOLD_15_DEG
+#define FXOS_HYSTERESIS_DEFAULT			FXOS_HYSTERESIS_7_DEG
 #define FXOS_INIT_DEFAULT				FXOS_ZLOCK_DEFAULT, FXOS_BKFR_DEFAULT, FXOS_THRESHOLD_DEFAULT, FXOS_HYSTERESIS_DEFAULT
 
 /*******************************************************************************
@@ -127,6 +130,17 @@ bool FXOSIsRunning(void);
  * @brief Returns when a new measurement is available
  */
 bool FXOSMeasurementAvailable(void);
+
+/**
+ * @brief Returns whether the orientation has changed or not
+ */
+bool FXOSOrientationChanged(void);
+
+/*
+ * @brief Registers a callback to be called when the orientation has changed
+ * @param callback 		Callback to be registered
+ */
+void FXOSSubscribeOrientationChanged(fxos_callback_t callback);
 
 /*
  * @brief Instantaneous acceleration vector getter

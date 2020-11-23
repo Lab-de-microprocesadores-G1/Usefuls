@@ -76,7 +76,13 @@ typedef struct {
   acc_vector_t          acceleration[2];        // Vector acceleration
   acc_orientation_t     orientation[2];         // Orientation
   uint8_t               outputBufferIndex;      // Index of the output buffer being used
+
+  /* Flags for polling */
   bool                  updated;                // Flag used to notify a new measurement
+  bool					orientationChanged;		// Flag used to notify when the orientation has changed
+
+  /* Event callbacks */
+  fxos_callback_t		onOrientationChanged;	// Callback to be called when the orientation changed
 
   /* I2C message buffers */
   uint8_t               writeBuffer[FXOS8700CQ_WRITE_BUFFER_SIZE];
@@ -188,12 +194,28 @@ bool FXOSMeasurementAvailable(void)
   return result;
 }
 
+bool FXOSOrientationChanged(void)
+{
+	bool result = context.orientationChanged;
+	if (result)
+	{
+		context.orientationChanged = false;
+	}
+	return result;
+}
+
+void FXOSSubscribeOrientationChanged(fxos_callback_t callback)
+{
+	context.onOrientationChanged = callback;
+}
+
 bool FXOSGetAcceleration(acc_vector_t* vector)
 {
   bool successful = false;
   if (context.status == ACC_STATUS_RUNNING)
   {
     *vector = context.acceleration[context.outputBufferIndex];
+    context.updated = false;
     successful = true;
   }
   return successful;
@@ -205,6 +227,7 @@ bool FXOSGetOrientation(acc_orientation_t* orientation)
   if (context.status == ACC_STATUS_RUNNING)
   {
     *orientation = context.orientation[context.outputBufferIndex];
+    context.updated = false;
     successful = true;
   }
   return successful;
@@ -273,7 +296,7 @@ static void FXOSInitSequence(bool reset)
       break;
     
     case 2: // Enable Portrait-Landscape detection
-      FXOSStartWrite(FXOS8700CQ_PL_CFG_REG, 0x40);
+      FXOSStartWrite(FXOS8700CQ_PL_CFG_REG, 0xC0);
       break;
     
     case 3: // Configure Z Compensation register
@@ -283,14 +306,18 @@ static void FXOSInitSequence(bool reset)
     case 4: // Configure PL threshold and hysteresis
       FXOSStartWrite(FXOS8700CQ_PL_THS_REG, (context.threshold << 3) | context.hysteresis);
       break;
-    
-    case 5: // Set the accelerometer active
+
+    case 5: // Configure debouncer counter
+      FXOSStartWrite(FXOS8700CQ_PL_COUNT_REG, 50);
+	  break;
+
+    case 6: // Set the accelerometer active
       FXOSStartWrite(FXOS8700CQ_CTRL_REG1, 1);
       break;
 
-    case 6: // Change to running state
-        context.status = ACC_STATUS_RUNNING;
-    	break;
+    case 7: // Change to running state
+      context.status = ACC_STATUS_RUNNING;
+      break;
 
     default:
       break;
@@ -350,6 +377,17 @@ static void FXOSRunningSequence(bool reset)
       context.orientation[(context.outputBufferIndex + 1) % 2].backFront = (context.readBuffer[0] & 0x01);
       context.updated = true;
       context.outputBufferIndex = (context.outputBufferIndex + 1) % 2;
+      if (context.readBuffer[0] & 0x80)
+      {
+          if (context.onOrientationChanged)
+          {
+        	  context.onOrientationChanged();
+          }
+          else
+          {
+        	  context.orientationChanged = true;
+          }
+      }
       break;
       
     default:
