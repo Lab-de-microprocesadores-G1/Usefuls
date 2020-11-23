@@ -22,6 +22,9 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// Declaring the callback data type
+typedef void (*i2c_callback)(void);
+
 // Declaring I2C instance id's, used to refer to the
 // MCU I2C instance used
 typedef enum {
@@ -65,12 +68,34 @@ void i2cMasterInit(i2c_id_t id, uint32_t baudRate);
  */
 void i2cStartTransaction(i2c_id_t id, uint8_t address, uint8_t* writeBuffer, size_t bytesToWrite, uint8_t* readBuffer, size_t bytesToRead);
 
+/********************
+ * POLLING SERVICES *
+ ********************/
+
 /**
  * @brief Returns the current status of the transaction
  * @param id            I2C Instance Id
  * @return  Returns i2c_state_t
  */
 i2c_state_t i2cQueryTransaction(i2c_id_t id);
+
+/***************************
+ * EVENT ORIENTED SERVICES *
+ **************************/
+
+/**
+ * @brief Registers a callback to be called when the i2c transaction finishes
+ * @param id            I2C Instance Id
+ * @param callback      Callback being registed
+ */
+void i2cOnFinished(i2c_id_t id, i2c_callback callback);
+
+/** 
+ * @brief Registers a callback to be called when an error occurrs during a i2c transaction
+ * @param id            I2C Instance Id
+ * @param callback      Callback being registered
+ */
+void i2cOnError(i2c_id_t id, i2c_callback callback);
 
 /*******************************************************************************
  ******************************************************************************/

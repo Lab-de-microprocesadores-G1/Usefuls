@@ -25,9 +25,11 @@
 
 // Declaring I2C instance data structure
 typedef struct {
+  /* General data */
   i2c_state_t   currentState;     // Current state of the I2C instance
+  bool          alreadyInit;      // Whether the instance has already been initialized or not
   
-  /* Baud rate */
+  /* Transaction baud rate */
   uint32_t      baudrate;
   
   /* Transaction user data */
@@ -41,6 +43,10 @@ typedef struct {
   uint8_t       bytesWritten;     // Bytes already written by the master
   uint8_t       bytesRead;        // Bytes already read from the slave
   bool          isReadMode;  	  // True when currently in read mode
+
+  /* Event's callbacks */
+  i2c_callback  onError;
+  i2c_callback  onFinished;
 } i2c_instance_t;
 
 // Declaring the baud rate configuration structure
@@ -68,7 +74,7 @@ enum {
 
 /**
  * @brief Computes what value should be used in the frequency register of the I2C
- * 		  peripheral to get the desired baud rate passed as argument.
+ * peripheral to get the desired baud rate passed as argument.
  */
 static baudrate_cfg_t computeBaudRateSettings(uint32_t desiredBaudRate);
 
@@ -89,8 +95,8 @@ __ISR__   I2C2_IRQHandler(void);
  ******************************************************************************/
 
 // I2C memory map pointer and context instances used to control the peripheral
-static uint8_t 			i2cIrqs[] = I2C_IRQS;
-static I2C_Type * 		i2cPointers[] = I2C_BASE_PTRS;
+static uint8_t 			    i2cIrqs[] = I2C_IRQS;
+static I2C_Type * 		  i2cPointers[] = I2C_BASE_PTRS;
 static i2c_instance_t 	i2cInstances[I2C_INSTANCE_COUNT] = {
   { I2C_STATE_IDLE },
   { I2C_STATE_IDLE },
@@ -130,32 +136,38 @@ static uint8_t i2cAlternative[I2C_INSTANCE_COUNT][I2C_PINOUT_COUNT] = {
 
 void i2cMasterInit(i2c_id_t id, uint32_t baudRate)
 {
-  PORT_Type* ports[] = PORT_BASE_PTRS;
-
-  // Clock gating of the I2C peripheral
-  SIM->SCGC4 |= SIM_SCGC4_I2C0_MASK | SIM_SCGC4_I2C1_MASK; 
-  SIM->SCGC1 |= SIM_SCGC1_I2C2_MASK;
-
-  // Clock gating of the PORT peripheral
-  SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTC_MASK;
-  SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK | SIM_SCGC5_PORTE_MASK;
-
-  // Enabling the PCR alternative for the pin out selected in the instance and Open Drain output
-  for (uint8_t i = 0 ; i < I2C_PINOUT_COUNT ; i++)
+  if (!i2cInstances[id].alreadyInit)
   {
-    ports[PIN2PORT(i2cPinout[id][i])]->PCR[PIN2NUM(i2cPinout[id][i])] = PORT_PCR_MUX(i2cAlternative[id][i]) | PORT_PCR_ODE(1);
+    PORT_Type* ports[] = PORT_BASE_PTRS;
+
+    // Clock gating of the I2C peripheral
+    SIM->SCGC4 |= SIM_SCGC4_I2C0_MASK | SIM_SCGC4_I2C1_MASK; 
+    SIM->SCGC1 |= SIM_SCGC1_I2C2_MASK;
+
+    // Clock gating of the PORT peripheral
+    SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTC_MASK;
+    SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK | SIM_SCGC5_PORTE_MASK;
+
+    // Enabling the PCR alternative for the pin out selected in the instance and Open Drain output
+    for (uint8_t i = 0 ; i < I2C_PINOUT_COUNT ; i++)
+    {
+      ports[PIN2PORT(i2cPinout[id][i])]->PCR[PIN2NUM(i2cPinout[id][i])] = PORT_PCR_MUX(i2cAlternative[id][i]) | PORT_PCR_ODE(1);
+    }
+
+    // Configure the frequency of the peripheral to get the desired baud rate
+    baudrate_cfg_t setting = computeBaudRateSettings(baudRate);
+    i2cPointers[id]->F = I2C_F_MULT(setting.mul) | I2C_F_ICR(setting.icr);
+
+    // Enable the NVIC for the I2C peripheral
+    NVIC_EnableIRQ(i2cIrqs[id]);
+
+    // Enable I2C module and interrupts
+    i2cPointers[id]->S = I2C_S_TCF_MASK | I2C_S_IICIF_MASK;
+    i2cPointers[id]->C1 = I2C_C1_IICEN(1) | I2C_C1_IICIE(1);
+
+    // Raise the already initialized flag
+    i2cInstances[id].alreadyInit = true;
   }
-
-  // Configure the frequency of the peripheral to get the desired baud rate
-  baudrate_cfg_t setting = computeBaudRateSettings(baudRate);
-  i2cPointers[id]->F = I2C_F_MULT(setting.mul) | I2C_F_ICR(setting.icr);
-
-  // Enable the NVIC for the I2C peripheral
-  NVIC_EnableIRQ(i2cIrqs[id]);
-
-  // Enable I2C module and interrupts
-  i2cPointers[id]->S = I2C_S_TCF_MASK | I2C_S_IICIF_MASK;
-  i2cPointers[id]->C1 = I2C_C1_IICEN(1) | I2C_C1_IICIE(1);
 }
 
 void i2cStartTransaction(i2c_id_t id, uint8_t address, uint8_t* writeBuffer, size_t bytesToWrite, uint8_t* readBuffer, size_t bytesToRead)
@@ -195,6 +207,16 @@ i2c_state_t i2cQueryTransaction(i2c_id_t id)
     i2cInstances[id].currentState = I2C_STATE_IDLE;
   }
   return result;
+}
+
+void i2cOnFinished(i2c_id_t id, i2c_callback callback)
+{
+  i2cInstances[id].onFinished = callback;
+}
+
+void i2cOnError(i2c_id_t id, i2c_callback callback)
+{
+  i2cInstances[id].onError = callback;
 }
 
 /*******************************************************************************
@@ -262,9 +284,13 @@ void I2C_IRQDispatcher(i2c_id_t id)
           {
             // An error occurred and the slave didn't answer, so the transaction
             // is stopped and the status of the instance is changed.
-        	// Release the I2C bus.
+        	  // Release the I2C bus.
             instance->currentState = I2C_STATE_ERROR;
             pointer->C1 = (pointer->C1 & ~I2C_C1_MST_MASK) | I2C_C1_MST(0);
+            if (instance->onError)
+            {
+              instance->onError();
+            }
           }
           else
           {
@@ -297,6 +323,10 @@ void I2C_IRQDispatcher(i2c_id_t id)
           // and the communication stops, the instance status is updated
           instance->currentState = I2C_STATE_FINISHED;
           pointer->C1 = (pointer->C1 & ~I2C_C1_MST_MASK) | I2C_C1_MST(0);
+          if (instance->onFinished)
+          {
+            instance->onFinished();
+          }
         }
       }
       else if (instance->bytesWritten < instance->bytesToWrite)
@@ -308,6 +338,10 @@ void I2C_IRQDispatcher(i2c_id_t id)
           // is stopped and the status of the instance is changed
           instance->currentState = I2C_STATE_ERROR;
           pointer->C1 = (pointer->C1 & ~I2C_C1_MST_MASK) | I2C_C1_MST(0);
+          if (instance->onError)
+          {
+            instance->onError();
+          }
         }
         else
         {
@@ -326,6 +360,10 @@ void I2C_IRQDispatcher(i2c_id_t id)
         pointer->C1 = (pointer->C1 & ~I2C_C1_MST_MASK) | I2C_C1_MST(0);
         instance->readBuffer[instance->bytesRead++] = pointer->D;
         instance->currentState = I2C_STATE_FINISHED;
+        if (instance->onFinished)
+        {
+          instance->onFinished();
+        }
       }
       else if (instance->bytesRead < instance->bytesToRead - 1)
       {
