@@ -149,7 +149,7 @@ static PORT_Type*     portPointers[]  = PORT_BASE_PTRS;
 static SPI_Type*      spiPointers[]   = SPI_BASE_PTRS;
 static const pin_t    uartPins[SPI_INSTANCE_AMOUNT][SPI_PIN_COUNT] = {
 //  SOUT                SIN                 SCLK                SS0                SS1                SS2                SS3                SS4                SS5
-  { PORTNUM2PIN(PD, 2), PORTNUM2PIN(PD, 3), PORTNUM2PIN(PD, 1), PORTNUM2PIN(PD, 0),PORTNUM2PIN(PD, 4),PORTNUM2PIN(PD, 5),PORTNUM2PIN(PD, 6),PORTNUM2PIN(PC, 0),PORTNUM2PIN(PB, 23)}, // SPI0
+  { PORTNUM2PIN(PD, 2), PORTNUM2PIN(PD, 3), PORTNUM2PIN(PD, 1), PORTNUM2PIN(PD, 0),PORTNUM2PIN(PC, 3),PORTNUM2PIN(PC, 2),PORTNUM2PIN(PC, 1),PORTNUM2PIN(PC, 0),PORTNUM2PIN(PB, 23)}, // SPI0
   { PORTNUM2PIN(PB, 16),PORTNUM2PIN(PB, 17),PORTNUM2PIN(PB, 2), PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3)}, // SPI1
   { PORTNUM2PIN(PB, 16),PORTNUM2PIN(PB, 17),PORTNUM2PIN(PB, 2), PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3)}  // SPI2
 };
@@ -328,7 +328,7 @@ bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size
     }
   }
 
-  // If the transmission is not currently active (EOQF is set), the first element in the software queue
+  // If the transmission is not currently active (TXRXS is set), the firsts elements in the software queue
   // should be sent to the hardware FIFO to start the transmission.
   if ( (spiPointers[id]->SR & SPI_SR_TXRXS_MASK ) != SPI_SR_TXRXS_MASK)
   {
