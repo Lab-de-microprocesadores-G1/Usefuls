@@ -29,10 +29,10 @@ typedef struct {
  ******************************************************************************/
 
 // Default hard-coded color palette
-#define WS2812_COLOR_RED      { 255, 0, 0 }
-#define WS2812_COLOR_BLUE     { 0, 0, 255 }
-#define WS2812_COLOR_GREEN    { 0, 255, 0 } 
-#define WS2812_COLOR_WHITE    { 255, 255, 255 }  
+#define WS2812_COLOR_RED      { 50, 0, 0 }
+#define WS2812_COLOR_BLUE     { 0, 0, 50 }
+#define WS2812_COLOR_GREEN    { 0, 50, 0 }
+#define WS2812_COLOR_WHITE    { 50, 50, 50 }
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE

@@ -54,7 +54,7 @@ void appInit (void)
     {
         for (uint8_t j = 0 ; j < DISPLAY_COL_SIZE ; j++)
         {
-            display[i * DISPLAY_ROW_SIZE + j] = colors[j % 4];
+            display[i * DISPLAY_ROW_SIZE + j] = WS2812_COLOR_RED;
         }
     }
 

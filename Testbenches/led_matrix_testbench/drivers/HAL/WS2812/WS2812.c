@@ -98,7 +98,7 @@ void WS2812SetDisplayBuffer(pixel_t* buffer, size_t size)
 
 void WS2812Update(void)
 {
-  pwmdmaStart(context.frames[0], context.frames[1], WS2812_FRAME_SIZE, context.bufferSize / WS2812_FRAME_SIZE + 1, false);
+  pwmdmaStart(context.frames[0], context.frames[1], WS2812_FRAME_SIZE, context.bufferSize / WS2812_FRAME_SIZE, false);
 }
 
 /*******************************************************************************
