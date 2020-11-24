@@ -20,8 +20,8 @@
  ******************************************************************************/
 
 // Select the testbench
-#define TEST_XYZ
-// #define TEST_ORIENTATION_CALLBACK
+// #define TEST_XYZ
+#define TEST_ORIENTATION_CALLBACK
 // #define TEST_ORIENTATION_POLLING
 
 #define BUFFER_SIZE	50
