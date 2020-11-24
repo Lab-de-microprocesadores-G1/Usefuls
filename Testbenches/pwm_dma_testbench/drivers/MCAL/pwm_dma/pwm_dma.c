@@ -8,8 +8,11 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <string.h>
+
 #include "pwm_dma.h"
 #include "MK64F12.h"
+#include "hardware.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -102,8 +105,7 @@ static pwmdma_context_t context;
 
 void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm_channel_t ftmChannel)
 {
-  FTM_Type * ftmInstances = FTM_BASE_PTRS;
-  
+  FTM_Type * ftmInstances[] = FTM_BASE_PTRS;
   if (!context.alreadyInitialized)
   {
     // Update the already initialized flag
@@ -120,10 +122,10 @@ void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm
     ftmPwmInit(ftmInstance, ftmChannel, FTM_PWM_HIGH_PULSES, FTM_PWM_EDGE_ALIGNED, 1, mod);
     
     // Enable FTM to trigger DMA requests
-	  ftmInstances[ftmInstance]->CONTROLS[ftmChannel].CnSC |= FTM_CnSC_DMA(1) | FTM_CnSC_CHIE(1);
+	ftmInstances[context.ftmInstance]->CONTROLS[context.ftmChannel].CnSC |= FTM_CnSC_DMA(1) | FTM_CnSC_CHIE(1);
   
-	  // Legacy mode!!
-	  ftmInstances[ftmInstance]->MODE = (ftmInstances[ftmInstance]->MODE & ~FTM_MODE_FTMEN_MASK) | FTM_MODE_FTMEN(0);
+	// Legacy mode!!
+	ftmInstances[context.ftmInstance]->MODE = (ftmInstances[context.ftmInstance]->MODE & ~FTM_MODE_FTMEN_MASK) | FTM_MODE_FTMEN(0);
 
     // Clock Gating for eDMA and DMAMux
     SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
@@ -145,6 +147,8 @@ void pwmdmaOnFrameUpdate(pwmdma_update_callback_t callback)
 
 void pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, size_t totalFrames, bool loop)
 {
+  FTM_Type * ftmInstances[] = FTM_BASE_PTRS;
+
   // Save the configuration of the transfers
   context.frames[0] = firstFrame;
   context.frames[1] = secondFrame;
@@ -161,7 +165,7 @@ void pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, 
   
   // Configure DMA Software TCD fields common to both TCDs
   // Destination address: FTM CnV for duty change
-  context.tcds[0].DADDR = (uint32_t)(&(ftmInstances[ftmInstance]->CONTROLS[ftmChannel].CnV));
+  context.tcds[0].DADDR = (uint32_t)(&(ftmInstances[context.ftmInstance]->CONTROLS[context.ftmChannel].CnV));
 
   // Source and destination offsets
   context.tcds[0].SOFF = sizeof(uint16_t);
@@ -231,14 +235,14 @@ __ISR__ DMA0_IRQHandler(void)
     else
     {
       context.framesCopied = context.framesCopied + 1;
-      if (context.framesCopied < (totalFrames - 1))
+      if (context.framesCopied < (context.totalFrames - 1))
       {
         if (context.updateCallback)
         {
           context.updateCallback(context.frames[!context.currentFrame], context.framesCopied); // Reload buffer 
         }
       }
-      else if (context.framesCopied == totalFrames)
+      else if (context.framesCopied == context.totalFrames)
       {
         ftmStop(context.ftmInstance);
       }
