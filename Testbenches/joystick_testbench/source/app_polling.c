@@ -8,16 +8,16 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include <string.h>
-#include "drivers/MCAL/adc/adc.h"
+#include "drivers/HAL/joystick/joystick.h"
 #include "drivers/MCAL/uart/uart.h"
+
+#include <string.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-// #define SOME_CONSTANT    20
-// #define MACRO(x)         (x)
+#define	BUFFER_SIZE		64
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -35,7 +35,7 @@
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static char msg[50];
+static char*	message[BUFFER_SIZE];
 
 /*******************************************************************************
  *******************************************************************************
@@ -46,44 +46,25 @@ static char msg[50];
 /* Called once at the beginning of the program */
 void appInit (void)
 {
-    // Initialize the ADC driver
-    adcInit();
+	// Initialization of the joystick
+	joystickInit();
 
-    // ADC configuration
-    adc_cfg_t config = {
-        .diff           = 0,
-        .resolution     = ADC_8_BIT_SINGLE_CONV,
-        .usingAverage   = 1,
-		.averageSamples = ADC_32_SAMPLES_AVERAGE
-    };
-    
-    adcConfig(ADC_POTENTIOMETER, config);
-
-    // UART driver init
-    uart_cfg_t uartConfig = {
-        .baudRate = UART_BAUD_RATE_9600,
-    };
-
-    uartInit(UART_INSTANCE_0, uartConfig);
+	// Intialization of the uart
+	uart_cfg_t uartSetting = { .baudRate = UART_BAUD_RATE_9600 };
+	uartInit(UART_INSTANCE_0, uartSetting);
 }
 
 /* Called repeatedly in an infinite loop */
 void appRun (void)
 {
-    if (adcConversionCompleted(ADC_POTENTIOMETER))
-    {
-        uint32_t conversion = adcGetConversion(ADC_POTENTIOMETER);
-    	sprintf(msg, "ADC Measurement %d\r\n", conversion);
-    	if (uartCanTx(UART_INSTANCE_0, strlen(msg)))
-    	{
-            uartWriteMsg(UART_INSTANCE_0, msg, strlen(msg));
-    	}
-    }
-
-    if (adcAvailable(ADC_POTENTIOMETER))
-    {
-        adcStartConversion(ADC_POTENTIOMETER);
-    }
+	for (uint32_t i = 0 ; i < 800000 ; i++);
+	if (uartCanTx(UART_INSTANCE_0, BUFFER_SIZE))
+	{
+		joystick_position_t pos = joystickGetPosition();
+		bool pressed = joystickIsPressed();
+		sprintf((char*)message, "x: %d - y: %d - pressed: %d\r\n", pos.x, pos.y, pressed);
+		uartWriteMsg(UART_INSTANCE_0, (const word_t*)message, strlen((char*)message));
+	}
 }
 
 /*******************************************************************************
@@ -91,7 +72,6 @@ void appRun (void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-
 
 
 /*******************************************************************************

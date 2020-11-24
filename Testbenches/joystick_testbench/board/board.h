@@ -28,15 +28,16 @@
 #define PIN_SW2         PORTNUM2PIN(PC, 6)  // PTC6
 #define PIN_SW3         PORTNUM2PIN(PA, 4)  // PTA4
 
+// Joystick pin connection
+#define PIN_JOYSTICK_BUTTON		PORTNUM2PIN(PC, 5)
+#define PIN_JOYSTICK_AXIS_X		PORTNUM2PIN(PB, 10)
+#define PIN_JOYSTICK_AXIS_Y		PORTNUM2PIN(PB, 3)
+
 #define SW2_ACTIVE		LOW
 #define SW3_ACTIVE		LOW
 
-// ADC Pins
-#define PIN_ADC_0       PORTNUM2PIN(PB, 3)  // PTB2
-
 // Active Status
 #define LED_ACTIVE      LOW
-    
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE

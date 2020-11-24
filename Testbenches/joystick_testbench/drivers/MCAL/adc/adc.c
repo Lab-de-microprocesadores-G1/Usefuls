@@ -36,11 +36,11 @@ typedef enum {
 // Declaring the adc instance data structure
 typedef struct {  
   const pin_t           pin;                      // Pin used
-  const uint8_t         alt;                      // Pin PCR alternative ued
+  const uint8_t         alt;                      // Pin PCR alternative used
   const uint8_t         adcId;                    // ADC Peripheral used
   const uint8_t         channel;                  // ADC Channel used
   adc_cfg_t             config;                   // Instance configuration
-  int16_t              lastConversion;           // Last conversion done on this instance
+  int16_t              	lastConversion;           // Last conversion done on this instance
   conversion_callback_t onConversionCompleted;    // Callback on conversion completed
   bool                  conversionCompleted;      // Flag of conversion completed
 } adc_instance_t; 
@@ -65,8 +65,9 @@ static void adcIRQDispatcher(adc_instance_id_t id);
  ******************************************************************************/
 
 static adc_instance_t adcInstances[] = {
-    //    PIN      ALT  ADC_ID  ADC_CHANNEL
-    { 	PIN_ADC_0, 0,	ADC_0, 		13  	}  // ADC_INSTANCE_0
+    //    PIN      				ALT  	ADC_ID  	ADC_CHANNEL
+	{	  PIN_JOYSTICK_AXIS_X, 	0,		ADC_1, 		14  			},
+	{	  PIN_JOYSTICK_AXIS_Y, 	0,		ADC_0, 		13  			}
 };
 
 // ADC registers pointers
