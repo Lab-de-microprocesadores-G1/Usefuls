@@ -135,6 +135,8 @@ void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm
   
     // Enable DMAMUX for DMA_CHANNEL and select source
     DMAMUX->CHCFG[DMA_CHANNEL] = DMAMUX_CHCFG_ENBL(1) | DMAMUX_CHCFG_TRIG(0) | DMAMUX_CHCFG_SOURCE(pwmdmaFtm2DmaChannel(context.ftmInstance, context.ftmChannel));
+
+    ftmStart(context.ftmInstance);
   }
 }
 
@@ -202,7 +204,7 @@ void pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, 
   memcpy(&(DMA0->TCD[DMA_CHANNEL]), &(context.tcds[0]), sizeof(pwmdma_TCD_t));
 
   // Starts the ftm driver
-  ftmStart(context.ftmInstance);
+  ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, true);
 }
 
 /*******************************************************************************
@@ -227,7 +229,7 @@ __ISR__ DMA0_IRQHandler(void)
       context.framesCopied = ( context.framesCopied + 1 ) % context.totalFrames;
       if (context.updateCallback)
       {
-        context.updateCallback(context.frames[!context.currentFrame], context.framesCopied); // Reload buffer 
+        context.updateCallback(context.frames[!context.currentFrame], context.framesCopied + 1); // Reload buffer
       }
     }
     else
@@ -237,12 +239,17 @@ __ISR__ DMA0_IRQHandler(void)
       {
         if (context.updateCallback)
         {
-          context.updateCallback(context.frames[!context.currentFrame], context.framesCopied); // Reload buffer 
+          context.updateCallback(context.frames[!context.currentFrame], context.framesCopied + 1); // Reload buffer
         }
+      }
+      else if (context.framesCopied == (context.totalFrames - 1) )
+      {
+		  // Disable Scatter and Gather operation to prevent one extra request
+    	  context.tcds[!context.currentFrame].CSR = ( context.tcds[!context.currentFrame].CSR & ~DMA_CSR_ESG_MASK ) | DMA_CSR_ESG(0);
       }
       else if (context.framesCopied == context.totalFrames)
       {
-        ftmStop(context.ftmInstance);
+        ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, false);
       }
     } 
   }
