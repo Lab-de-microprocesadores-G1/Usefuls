@@ -22,7 +22,7 @@
 #define BUFFER_SIZE         FRAME_SIZE
 
 #define PRESCALER           1
-#define MODULO              31
+#define MODULO              30
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -53,7 +53,7 @@ void appInit (void)
     pwmdmaOnFrameUpdate(updateCallback);
 
     // Start the DMA transfer on the PWM
-    pwmdmaStart(firstFrame, secondFrame, FRAME_SIZE, TOTAL_FRAMES, false);
+    pwmdmaStart(firstFrame, secondFrame, FRAME_SIZE, TOTAL_FRAMES, true);
 }
 
 /* Called repeatedly in an infinite loop */

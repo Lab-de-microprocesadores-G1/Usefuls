@@ -24,7 +24,6 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-
 // DMA TCD Structure
 typedef struct {
   uint32_t SADDR;                               /**< TCD Source Address, array offset: 0x1000, array step: 0x20 */
@@ -72,7 +71,7 @@ typedef struct {
   ftm_channel_t             ftmChannel;
 
   /* Software TCD structs for Scatter and Gather */
-  pwmdma_TCD_t              tcds[2];
+  pwmdma_TCD_t              tcds[2] __attribute__ ((aligned(32)));
   
 } pwmdma_context_t;
 
@@ -129,14 +128,13 @@ void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm
 
     // Clock Gating for eDMA and DMAMux
     SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
-	  SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
+	SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
 
     // Enable NVIC for DMA channel 0
     NVIC_EnableIRQ(DMA0_IRQn);
   
     // Enable DMAMUX for DMA_CHANNEL and select source
     DMAMUX->CHCFG[DMA_CHANNEL] = DMAMUX_CHCFG_ENBL(1) | DMAMUX_CHCFG_TRIG(0) | DMAMUX_CHCFG_SOURCE(pwmdmaFtm2DmaChannel(context.ftmInstance, context.ftmChannel));
-    
   }
 }
 
