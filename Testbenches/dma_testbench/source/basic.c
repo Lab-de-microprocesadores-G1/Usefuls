@@ -33,30 +33,6 @@ __ISR__ DMA0_IRQHandler(void);
  * VARIABLES TYPES DEFINITIONS
  ******************************************************************************/
 
-typedef struct {
-    uint32_t SADDR;                                 /**< TCD Source Address, array offset: 0x1000, array step: 0x20 */
-    uint16_t SOFF;                                  /**< TCD Signed Source Address Offset, array offset: 0x1004, array step: 0x20 */
-    uint16_t ATTR;                                  /**< TCD Transfer Attributes, array offset: 0x1006, array step: 0x20 */
-    union {                                          /* offset: 0x1008, array step: 0x20 */
-        uint32_t NBYTES_MLNO;                       /**< TCD Minor Byte Count (Minor Loop Disabled), array offset: 0x1008, array step: 0x20 */
-        uint32_t NBYTES_MLOFFNO;                    /**< TCD Signed Minor Loop Offset (Minor Loop Enabled and Offset Disabled), array offset: 0x1008, array step: 0x20 */
-        uint32_t NBYTES_MLOFFYES;                   /**< TCD Signed Minor Loop Offset (Minor Loop and Offset Enabled), array offset: 0x1008, array step: 0x20 */
-    };
-    uint32_t SLAST;                                 /**< TCD Last Source Address Adjustment, array offset: 0x100C, array step: 0x20 */
-    uint32_t DADDR;                                 /**< TCD Destination Address, array offset: 0x1010, array step: 0x20 */
-    uint16_t DOFF;                                  /**< TCD Signed Destination Address Offset, array offset: 0x1014, array step: 0x20 */
-    union {                                          /* offset: 0x1016, array step: 0x20 */
-        uint16_t CITER_ELINKNO;                     /**< TCD Current Minor Loop Link, Major Loop Count (Channel Linking Disabled), array offset: 0x1016, array step: 0x20 */
-        uint16_t CITER_ELINKYES;                    /**< TCD Current Minor Loop Link, Major Loop Count (Channel Linking Enabled), array offset: 0x1016, array step: 0x20 */
-    };
-    uint32_t DLAST_SGA;                             /**< TCD Last Destination Address Adjustment/Scatter Gather Address, array offset: 0x1018, array step: 0x20 */
-    uint16_t CSR;                                   /**< TCD Control and Status, array offset: 0x101C, array step: 0x20 */
-    union {                                          /* offset: 0x101E, array step: 0x20 */
-        uint16_t BITER_ELINKNO;                     /**< TCD Beginning Minor Loop Link, Major Loop Count (Channel Linking Disabled), array offset: 0x101E, array step: 0x20 */
-        uint16_t BITER_ELINKYES;                    /**< TCD Beginning Minor Loop Link, Major Loop Count (Channel Linking Enabled), array offset: 0x101E, array step: 0x20 */
-    };
-} eDMA_TCD_t;
-
 typedef enum {
     DMA_MUX_PORTC = 51
 } dma_mux_sources_t;
@@ -76,8 +52,6 @@ typedef enum {
 uint8_t sourceBuffer[50];
 uint16_t destinationBuffer[50];
 
-eDMA_TCD_t tcds[2];
-
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -87,6 +61,7 @@ eDMA_TCD_t tcds[2];
 /* Called once at the beginning of the program */
 void appInit (void)
 {
+	// Initialize LED driver
 	ledInit();
 
     // Filling sourceBuffer
