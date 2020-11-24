@@ -8,14 +8,15 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-// #include "superpower.h"
+#include "drivers/HAL/WS2812/WS2812.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-// #define SOME_CONSTANT    20
-// #define MACRO(x)         (x)
+#define DISPLAY_ROW_SIZE    8
+#define DISPLAY_COL_SIZE    8
+#define DISPLAY_SIZE        DISPLAY_ROW_SIZE * DISPLAY_COL_SIZE
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -33,7 +34,8 @@
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// static int myVar;
+static pixel_t display[DISPLAY_SIZE];
+static pixel_t colors[4] = { WS2812_COLOR_RED, WS2812_COLOR_GREEN, WS2812_COLOR_BLUE, WS2812_COLOR_WHITE };
 
 /*******************************************************************************
  *******************************************************************************
@@ -44,7 +46,19 @@
 /* Called once at the beginning of the program */
 void appInit (void)
 {
-    // Application initialisation, drivers, etc...
+    WS2812Init();
+
+    WS2812SetDisplayBuffer(display, DISPLAY_SIZE);    
+
+    for (uint8_t i = 0 ; i < DISPLAY_ROW_SIZE ; i++)
+    {
+        for (uint8_t j = 0 ; j < DISPLAY_COL_SIZE ; j++)
+        {
+            display[i * DISPLAY_ROW_SIZE + j] = colors[j % 4];
+        }
+    }
+
+    WS2812Update();
 }
 
 /* Called repeatedly in an infinite loop */
