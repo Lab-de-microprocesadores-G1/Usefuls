@@ -193,8 +193,6 @@ static uint16_t spiScaler[] = {
   32768
 };
 
-int huevo = 0;
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -344,7 +342,6 @@ bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size
   // should be sent to the hardware FIFO to start the transmission.
   if ( (spiPointers[id]->SR & SPI_SR_TXRXS_MASK ) != SPI_SR_TXRXS_MASK)
   {
-	  huevo++;
     softQueue2HardFIFO(id);
     spiPointers[id]->MCR = (spiPointers[id]->MCR & ~SPI_MCR_HALT_MASK) | SPI_MCR_HALT(0);
   }
