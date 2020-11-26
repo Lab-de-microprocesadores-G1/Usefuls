@@ -102,7 +102,8 @@ static uart_instance_t  uartInstances[UART_AMOUNT] = {
   { 	3, 					6		},
   { 	3, 					6		},
   { 	3, 					6		},
-  { 	1, 					2		},
+  { 	1, 					1
+  },
   { 	3, 					6		}
 };
 
@@ -115,6 +116,7 @@ static const pin_t    uartPins[UART_AMOUNT][UART_PIN_COUNT] = {
   { PORTNUM2PIN(PC, 16),PORTNUM2PIN(PC, 17),PORTNUM2PIN(PC, 18),PORTNUM2PIN(PB, 9) }, // UART3
   { PORTNUM2PIN(PE, 25),PORTNUM2PIN(PE, 24),PORTNUM2PIN(PC, 12),PORTNUM2PIN(PE, 26)}, // UART4
 };
+
 
 // Look up table to determine the alternative in each pin corresponding to the UART
 static const uint8_t  uartPinAlts[UART_AMOUNT][UART_PIN_COUNT] = {
