@@ -204,10 +204,13 @@ static void timer_isr(void)
             // si hubo timeout!
             if (currentTimer->cnt == 0)
             {
-            	// Important: first update state so that if timerStart()
-				// is called in the callback, this block doesn't deletes
-            	// the configuration
-                // 1) update state
+                // 1) execute action: callback or set flag
+                if (currentTimer->callback)
+                {
+                    currentTimer->callback();
+                }
+
+                // 2) update state
                 if (currentTimer->mode == TIM_MODE_SINGLESHOT)
                 {
                     currentTimer->expired = 1;
@@ -218,13 +221,6 @@ static void timer_isr(void)
                     currentTimer->cnt = currentTimer->period;
                     currentTimer->expired = 1;
                 }
-
-            	// 2) execute action: callback or set flag
-                if (currentTimer->callback)
-                {
-                    currentTimer->callback();
-                }
-
             }
         }
     }
