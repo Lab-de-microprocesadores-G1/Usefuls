@@ -9,7 +9,7 @@
  ******************************************************************************/
 #define DEBUG_MODE
 #include "drivers/HAL/WS2812/WS2812.h"
-#include "drivers/MCAL/uart/uart.h"
+#include "drivers/HAL/node_red/node_red.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -35,15 +35,6 @@
  ******************************************************************************/
 
 static pixel_t display[DISPLAY_SIZE];
-static pixel_t colours;
-
-static uart_cfg_t config = {
-	.baudRate 		= UART_BAUD_RATE_9600,
-	.length			= 0,
-	.parityEnable	= 0,
-	.parityMode		= 0,
-	.stopMode		= 0
-};
 
 
 /*******************************************************************************
@@ -59,28 +50,16 @@ void appInit (void)
 
     WS2812SetDisplayBuffer(display, DISPLAY_SIZE);    
 
-    //UART initialize
-    uartInit(UART_INSTANCE_3, config);
+    nodeRedInit();
 }
 
 /* Called repeatedly in an infinite loop */
 void appRun (void)
 {
-	if (uartHasRxMsg(UART_INSTANCE_3))
+	node_red_pixel_t pixel;
+	if (nodeRedHasNewValue())
 	{
-		uint8_t length = uartGetRxMsgLength(UART_INSTANCE_3);
-		if(length == 3)
-		{
-			uint8_t lengthRead = uartReadMsg(UART_INSTANCE_3, &colours, length);
-			for (uint8_t i = 0 ; i < DISPLAY_ROW_SIZE ; i++)
-			    {
-			        for (uint8_t j = 0 ; j < DISPLAY_COL_SIZE ; j++)
-			        {
-						display[i * DISPLAY_ROW_SIZE + j] = colours;
-			        }
-			    }
-			    WS2812Update();
-		}
+		pixel = nodeRedGetValue();
 	}
 }
 
