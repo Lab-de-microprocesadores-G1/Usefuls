@@ -60,7 +60,7 @@ void serialLedWriteAll(uint8_t status);
 /**
  * @brief Writes a number from 0 to 8.
  * @param number	Value to be written.
- * For example, sending number=2 will turn on QH and QG.
+ * For example, sending number=2 will turn on QA and QB.
  */
 void serialLedSetNumber(uint8_t number);
 
