@@ -34,8 +34,8 @@
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static pixel_t display[DISPLAY_SIZE];
-static pixel_t colors[4] = { WS2812_COLOR_RED, WS2812_COLOR_GREEN, WS2812_COLOR_BLUE, WS2812_COLOR_WHITE };
+static ws2812_pixel_t display[DISPLAY_SIZE];
+static ws2812_pixel_t colors[4] = { WS2812_COLOR_RED, WS2812_COLOR_GREEN, WS2812_COLOR_BLUE, WS2812_COLOR_WHITE };
 
 /*******************************************************************************
  *******************************************************************************

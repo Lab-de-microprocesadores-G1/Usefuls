@@ -34,7 +34,7 @@
 // Declaring the context of WS2812 data structure
 typedef struct {
   /* Display buffer */
-  pixel_t*    buffer;
+  ws2812_pixel_t*    buffer;
   size_t      bufferSize;
 
   /* Controller variables */
@@ -91,7 +91,7 @@ void WS2812Init(void)
   }
 }
 
-void WS2812SetDisplayBuffer(pixel_t* buffer, size_t size)
+void WS2812SetDisplayBuffer(ws2812_pixel_t* buffer, size_t size)
 {
   context.buffer = buffer;
   context.bufferSize = size;
@@ -115,7 +115,7 @@ static void pwmUpdateCallback(uint16_t *frameToUpdate, uint8_t frameCounter)
   for (uint8_t i = 0 ; i < WS2812_FRAME_LED_SIZE ; i++)
   {
     // Decoding current pixel in the frame to be updated
-    pixel_t pixel = context.buffer[ i + frameCounter * WS2812_FRAME_LED_SIZE ];
+    ws2812_pixel_t pixel = context.buffer[ i + frameCounter * WS2812_FRAME_LED_SIZE ];
 
     // Using GRB order
     pixelComponents[0] = pixel.g;

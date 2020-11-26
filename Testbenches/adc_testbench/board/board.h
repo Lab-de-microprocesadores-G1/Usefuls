@@ -32,7 +32,7 @@
 #define SW3_ACTIVE		LOW
 
 // ADC Pins
-#define PIN_ADC_0       PORTNUM2PIN(PB, 2)  // PTB2
+#define PIN_ADC_0       PORTNUM2PIN(PB, 3)  // PTB2
 
 // Active Status
 #define LED_ACTIVE      LOW

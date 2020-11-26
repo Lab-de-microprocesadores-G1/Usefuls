@@ -22,7 +22,7 @@ typedef struct {
   uint8_t r;
   uint8_t g;
   uint8_t b;
-} pixel_t;
+} ws2812_pixel_t;
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -52,7 +52,7 @@ void WS2812Init(void);
  * @param buffer  Array of pixels
  * @param size    Number of pixels in array
  */
-void WS2812SetDisplayBuffer(pixel_t* buffer, size_t size);
+void WS2812SetDisplayBuffer(ws2812_pixel_t* buffer, size_t size);
 
 /*
  * @brief Mirrors display buffer to the array of WS2812 leds
