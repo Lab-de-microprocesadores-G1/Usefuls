@@ -9,13 +9,13 @@
  ******************************************************************************/
 
 #include "node_red.h"
-
 #include "drivers/MCAL/uart/uart.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
-#define FRAMESIZE 		4
+#define FRAMESIZE 		1
+#define UART_INSTANCE	UART_INSTANCE_3
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -47,8 +47,6 @@ static uart_cfg_t config = {
 	.stopMode		= 0
 };
 
-static node_red_pixel_t object_colour;
-static bool new_value;
 
 /*******************************************************************************
  *******************************************************************************
@@ -59,21 +57,32 @@ static bool new_value;
 void nodeRedInit(void)
 {
 	//UART initialize
-	uartInit(UART_INSTANCE_3, config);
-	uartSubscribeRxMsg(UART_INSTANCE_3, updateColourCallback, FRAMESIZE);
-	new_value = false;
+	uartInit(UART_INSTANCE, config);
+	uartSubscribeRxMsg(UART_INSTANCE, updateColourCallback, FRAMESIZE);
+
+	//Protocol initialize
+	protocolInit();
 }
 
-node_red_pixel_t nodeRedGetValue()
+protocol_packet_t nodeRedGetValue()
 {
-	new_value = false;
-	return object_colour;
+	return protocolGetNextPacket();
 }
 
 bool nodeRedHasNewValue()
 {
-	return new_value;
+	return protocolHasPackets();
 }
+
+void nodeRedSendValue(protocol_packet_t packet, uint8_t* encoded)
+{
+	size_t length = protocolEncode(packet, encoded);
+	if(uartCanTx(UART_INSTANCE, length))
+	{
+		uartWriteMsg(UART_INSTANCE, encoded, length);
+	}
+}
+
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
@@ -82,9 +91,9 @@ bool nodeRedHasNewValue()
 
 static void updateColourCallback()
 {
-	uint8_t length = uartGetRxMsgLength(UART_INSTANCE_3);
-	uartReadMsg(UART_INSTANCE_3, &object_colour, length);
-	new_value = true;
+	word_t newByte;
+	uartReadMsg(UART_INSTANCE, &newByte, 1);
+	protocolDecode(newByte);
 }
 
 /*******************************************************************************

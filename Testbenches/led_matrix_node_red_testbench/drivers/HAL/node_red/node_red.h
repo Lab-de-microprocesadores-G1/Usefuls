@@ -12,6 +12,7 @@
  ******************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
+#include "lib/protocol/protocol.h"
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -52,12 +53,19 @@ void nodeRedInit(void);
  * @brief Gets new colour
  * @return Struct with topic and rgb colours
  */
-node_red_pixel_t nodeRedGetValue();
+protocol_packet_t nodeRedGetValue();
 
 /*
  * @brief True if new value
  */
 bool nodeRedHasNewValue();
+
+/*
+ * @brief Sends message to node-red
+ * @param msg: message to send
+ * @param length: length of message to be sent
+ */
+void nodeRedSendValue(protocol_packet_t packet, uint8_t* encoded);
 /*******************************************************************************
  ******************************************************************************/
 
