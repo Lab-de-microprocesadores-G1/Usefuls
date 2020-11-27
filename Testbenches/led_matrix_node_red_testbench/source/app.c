@@ -36,6 +36,8 @@
 
 static pixel_t display[DISPLAY_SIZE];
 
+static protocol_packet_t receiveColour;
+
 
 /*******************************************************************************
  *******************************************************************************
@@ -56,10 +58,9 @@ void appInit (void)
 /* Called repeatedly in an infinite loop */
 void appRun (void)
 {
-	node_red_pixel_t pixel;
 	if (nodeRedHasNewValue())
 	{
-		pixel = nodeRedGetValue();
+		receiveColour = nodeRedGetValue();
 	}
 }
 
