@@ -67,6 +67,12 @@ typedef enum {
   SPI_ENDIANNESS_LSB_FIRST
 } spi_endianness_t;
 
+// Whether PCS is disabled after transfer or not
+typedef enum {
+  SPI_CONTINUOUS_PCS_DIS,
+  SPI_CONTINUOUS_PCS_EN
+} spi_continuous_pcs_t;
+
 // Declaring the SPI configuration
 typedef struct{
   uint32_t          baudRate;
@@ -75,6 +81,7 @@ typedef struct{
   uint8_t           clockPolarity         : 1;
   uint8_t           clockPhase            : 1;
   uint8_t           endianness            : 1;
+  uint8_t           continuousPcs         : 1;
 } spi_cfg_t;
 
 /*******************************************************************************

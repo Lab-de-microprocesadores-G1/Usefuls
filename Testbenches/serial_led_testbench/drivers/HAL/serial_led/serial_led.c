@@ -55,8 +55,8 @@ static void updateOutput(void);
 static spi_cfg_t spiConfig = {
 		.baudRate = LED_SPI_BAUD_RATE,
 		.frameSize = LED_SPI_FRAME_SIZE,
-		.slaveSelectPolarity = SPI_SS_INACTIVE_HIGH		// This is to use SS as RCLK
-
+		.slaveSelectPolarity = SPI_SS_INACTIVE_HIGH,	// This is to use SS as RCLK
+		.continuousPcs		 = SPI_CONTINUOUS_PCS_DIS	// Make sure RCLK has a rising edge after transfer
 };
 
 static uint16_t ledStates 	= 0;
@@ -125,11 +125,6 @@ void updateOutput(void)
 	{
 		// Send led state
 		spiSend(LED_SPI_INSTANCE, LED_SPI_SLAVE_ID, &message, 1);
-
-		for (uint32_t i = 0 ; i < 10000 ; i++);
-
-		// Send another byte to turn off slave select
-		spiSend(LED_SPI_INSTANCE, 0, &message, 1);
 	}
 }
 

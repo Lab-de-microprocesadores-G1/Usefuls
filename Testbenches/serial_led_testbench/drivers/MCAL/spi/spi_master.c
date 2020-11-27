@@ -193,8 +193,6 @@ static uint16_t spiScaler[] = {
   32768
 };
 
-int huevo = 0;
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -344,7 +342,6 @@ bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size
   // should be sent to the hardware FIFO to start the transmission.
   if ( (spiPointers[id]->SR & SPI_SR_TXRXS_MASK ) != SPI_SR_TXRXS_MASK)
   {
-	  huevo++;
     softQueue2HardFIFO(id);
     spiPointers[id]->MCR = (spiPointers[id]->MCR & ~SPI_MCR_HALT_MASK) | SPI_MCR_HALT(0);
   }
@@ -361,7 +358,7 @@ void softQueue2HardFIFO(spi_id_t id)
     spi_package_t* package = (spi_package_t*)pop(&(spiInstances[id].txQueue));
     
     // Writing message to hardware TX FIFO.
-    spiPointers[id]->PUSHR = SPI_PUSHR_CONT(1) | SPI_PUSHR_CTAS(0b000) | SPI_PUSHR_EOQ(package->eoq) | 
+    spiPointers[id]->PUSHR = SPI_PUSHR_CONT(spiInstances[id].config.continuousPcs) | SPI_PUSHR_CTAS(0b000) | SPI_PUSHR_EOQ(package->eoq) | 
                              SPI_PUSHR_CTCNT(1) | SPI_PUSHR_PCS(package->slaves) | SPI_PUSHR_TXDATA(package->frame);
 
     // Clear the flag just in case

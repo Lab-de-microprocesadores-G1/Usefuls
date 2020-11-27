@@ -358,7 +358,7 @@ void softQueue2HardFIFO(spi_id_t id)
     spi_package_t* package = (spi_package_t*)pop(&(spiInstances[id].txQueue));
     
     // Writing message to hardware TX FIFO.
-    spiPointers[id]->PUSHR = SPI_PUSHR_CONT(1) | SPI_PUSHR_CTAS(0b000) | SPI_PUSHR_EOQ(package->eoq) | 
+    spiPointers[id]->PUSHR = SPI_PUSHR_CONT(spiInstances[id].config.continuousPcs) | SPI_PUSHR_CTAS(0b000) | SPI_PUSHR_EOQ(package->eoq) | 
                              SPI_PUSHR_CTCNT(1) | SPI_PUSHR_PCS(package->slaves) | SPI_PUSHR_TXDATA(package->frame);
 
     // Clear the flag just in case
