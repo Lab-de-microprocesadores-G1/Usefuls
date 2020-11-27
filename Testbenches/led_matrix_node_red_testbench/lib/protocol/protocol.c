@@ -113,7 +113,7 @@ void protocolDecode(uint8_t data)
             {
                 currentByte = 0;
                 currentState = PS_DATA;
-                currentPacket.topic = data;
+                currentPacket.topic = (protocol_topic_t)data;
             }
             else
             {
@@ -121,7 +121,7 @@ void protocolDecode(uint8_t data)
             }
             break;
         case PS_ESCAPE_TOPIC:
-            currentPacket.topic = protocolEscapeAlgorithm(data);
+            currentPacket.topic = (protocol_topic_t)protocolEscapeAlgorithm(data);
             if (currentPacket.topic < PROTOCOL_TOPIC_COUNT)
             {
                 currentByte = 0;
@@ -181,6 +181,8 @@ size_t protocolEncode(protocol_packet_t packet, uint8_t* encoded)
         case PROTOCOL_TOPIC_PIXEL:
             encoded += protocolEncodePixelData(packet.data.pixel, encoded);
             break;
+        default:
+            break;
     }
     *(encoded++) = PROTOCOL_STOP_BYTE;
     encodedSize = encoded - startPointer;
@@ -188,10 +190,10 @@ size_t protocolEncode(protocol_packet_t packet, uint8_t* encoded)
     // Apply the byte stuffing
     for (uint8_t i = 1 ; i < (encodedSize - 1) ; i++)
     {
-        uint8_t data = *(encoded + i);
+        uint8_t data = *(startPointer + i);
         if (data == PROTOCOL_START_BYTE || data == PROTOCOL_ESCAPE_BYTE || data == PROTOCOL_STOP_BYTE)
         {
-            for (uint8_t j = encodedSize ; j > i ; j++)
+            for (uint8_t j = encodedSize ; j > i ; j--)
             {
                 if (j > i + 1)
                 {
@@ -223,6 +225,8 @@ static void protocolDecodeData(uint8_t data)
     {
         case PROTOCOL_TOPIC_PIXEL:
             protocolDecodePixelData(data);
+            break;
+        default:
             break;
     }
 
@@ -266,5 +270,4 @@ static uint8_t protocolEscapeAlgorithm(uint8_t data)
  ******************************************************************************/
 
 /******************************************************************************/
-
 
