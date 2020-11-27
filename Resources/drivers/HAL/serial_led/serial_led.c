@@ -56,7 +56,6 @@ static spi_cfg_t spiConfig = {
 		.baudRate = LED_SPI_BAUD_RATE,
 		.frameSize = LED_SPI_FRAME_SIZE,
 		.slaveSelectPolarity = SPI_SS_INACTIVE_HIGH		// This is to use SS as RCLK
-
 };
 
 static uint16_t ledStates 	= 0;
