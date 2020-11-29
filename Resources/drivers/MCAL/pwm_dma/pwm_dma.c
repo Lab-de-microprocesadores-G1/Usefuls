@@ -14,6 +14,8 @@
 #include "MK64F12.h"
 #include "hardware.h"
 
+uint8_t huevo;
+
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -136,7 +138,7 @@ void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm
     // Enable DMAMUX for DMA_CHANNEL and select source
     DMAMUX->CHCFG[DMA_CHANNEL] = DMAMUX_CHCFG_ENBL(1) | DMAMUX_CHCFG_TRIG(0) | DMAMUX_CHCFG_SOURCE(pwmdmaFtm2DmaChannel(context.ftmInstance, context.ftmChannel));
 
-    ftmStart(context.ftmInstance);
+//    ftmStart(context.ftmInstance);
   }
 }
 
@@ -172,7 +174,7 @@ void pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, 
   context.tcds[0].DOFF = 0;
   
   // Source last sddress adjustment
-  context.tcds[0].SLAST = 0;
+  context.tcds[0].SLAST = -frameSize * sizeof(uint16_t);
   
   // Set transfer size to 16bits (CnV size)
   context.tcds[0].ATTR = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);
@@ -204,6 +206,7 @@ void pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, 
   memcpy(&(DMA0->TCD[DMA_CHANNEL]), &(context.tcds[0]), sizeof(pwmdma_TCD_t));
 
   // Starts the ftm driver
+  ftmStart(context.ftmInstance);
   ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, true);
 }
 
@@ -246,10 +249,12 @@ __ISR__ DMA0_IRQHandler(void)
       {
 		  // Disable Scatter and Gather operation to prevent one extra request
     	  context.tcds[!context.currentFrame].CSR = ( context.tcds[!context.currentFrame].CSR & ~DMA_CSR_ESG_MASK ) | DMA_CSR_ESG(0);
+        context.tcds[!context.currentFrame].DLAST_SGA = 0;
       }
       else if (context.framesCopied == context.totalFrames)
       {
         ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, false);
+    	  ftmStop(context.ftmInstance);
       }
     } 
   }

@@ -93,7 +93,7 @@ static void updateColourCallback()
 {
 	word_t newByte;
 	uartReadMsg(UART_INSTANCE, &newByte, 1);
-	protocolDecode(newByte);
+	protocolDecode((char)newByte);
 }
 
 /*******************************************************************************
