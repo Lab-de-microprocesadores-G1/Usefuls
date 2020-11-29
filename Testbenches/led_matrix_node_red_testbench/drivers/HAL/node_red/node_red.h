@@ -65,7 +65,7 @@ bool nodeRedHasNewValue();
  * @param msg: message to send
  * @param length: length of message to be sent
  */
-void nodeRedSendValue(protocol_packet_t packet, uint8_t* encoded);
+void nodeRedSendValue(protocol_packet_t packet, uint8_t* encode);
 /*******************************************************************************
  ******************************************************************************/
 

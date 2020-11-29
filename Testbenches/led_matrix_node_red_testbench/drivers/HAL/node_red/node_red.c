@@ -74,12 +74,12 @@ bool nodeRedHasNewValue()
 	return protocolHasPackets();
 }
 
-void nodeRedSendValue(protocol_packet_t packet, uint8_t* encoded)
+void nodeRedSendValue(protocol_packet_t packet, uint8_t* encode)
 {
-	size_t length = protocolEncode(packet, encoded);
+	size_t length = protocolEncode(packet, encode);
 	if(uartCanTx(UART_INSTANCE, length))
 	{
-		uartWriteMsg(UART_INSTANCE, encoded, length);
+		uartWriteMsg(UART_INSTANCE, encode, length);
 	}
 }
 

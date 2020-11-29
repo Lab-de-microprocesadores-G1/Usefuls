@@ -38,6 +38,7 @@ static pixel_t display[DISPLAY_SIZE];
 
 static protocol_packet_t receiveColour;
 
+static protocol_packet_t levelData = {PROTOCOL_TOPIC_LEVEL, 2};
 
 /*******************************************************************************
  *******************************************************************************
