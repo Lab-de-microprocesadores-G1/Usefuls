@@ -73,7 +73,8 @@ typedef struct {
   queue_t           rxQueue;                      // Queue instance for rx
 
   // Configuration of SPI hardware
-  spi_cfg_t   config;
+  spi_cfg_t         config;
+  spi_slave_id_t    slave;
   
   // Flags
   bool transferComplete;
@@ -113,14 +114,13 @@ static uint32_t computeBaudRate(uint8_t dbr, uint8_t br, uint8_t pbr);
  *        Adds the functionality that the message can be ignored and
  *        just send "trash".
  * @param id          SPI module id
- * @param slave       The id of the slave to send the data
  * @param message     Message to be sent
  * @param len         Message length
  * @param sendTrash   When true, message content is ignored and just the software queue
  *                    is incremented in len.If false, sends the message
  * @return Whether it could send or not
  */
-static bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size_t len, bool sendTrash);
+static bool smartSend(spi_id_t id, const uint16_t message[], size_t len, bool sendTrash);
 
 /**
  * @brief Transfers the first element in the software queue to the hardware FIFO.
@@ -150,7 +150,7 @@ static void     SPI_RFDFDispatcher(spi_id_t id);
 
 static PORT_Type*     portPointers[]  = PORT_BASE_PTRS;
 static SPI_Type*      spiPointers[]   = SPI_BASE_PTRS;
-static const pin_t    uartPins[SPI_INSTANCE_AMOUNT][SPI_PIN_COUNT] = {
+static const pin_t    spiPins[SPI_INSTANCE_AMOUNT][SPI_PIN_COUNT] = {
 //  SOUT                SIN                 SCLK                SS0                SS1                SS2                SS3                SS4                SS5
   { PORTNUM2PIN(PD, 2), PORTNUM2PIN(PD, 3), PORTNUM2PIN(PD, 1), PORTNUM2PIN(PD, 0),PORTNUM2PIN(PC, 3),PORTNUM2PIN(PC, 2),PORTNUM2PIN(PC, 1),PORTNUM2PIN(PC, 0),PORTNUM2PIN(PB, 23)}, // SPI0
   { PORTNUM2PIN(PB, 16),PORTNUM2PIN(PB, 17),PORTNUM2PIN(PB, 2), PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3)}, // SPI1
@@ -200,7 +200,7 @@ static uint16_t spiScaler[] = {
  *******************************************************************************
  ******************************************************************************/
 
-void spiInit(spi_id_t id, spi_cfg_t config)
+void spiInit(spi_id_t id, spi_slave_id_t slave, spi_cfg_t config)
 {
   // Clock gating of the SPI peripheral
   SIM->SCGC6 |= SIM_SCGC6_SPI0(1);
@@ -215,10 +215,33 @@ void spiInit(spi_id_t id, spi_cfg_t config)
   SIM->SCGC5 |= SIM_SCGC5_PORTE(1);
 
   // Selecting the mux alternative for the port used
-  for (uint8_t i = 0 ; i < SPI_PIN_COUNT ; i++)
+  spiInstances[id].slave = slave;
+  uint8_t slavePin;
+  switch (slave)
   {
-    portPointers[PIN2PORT(uartPins[id][i])]->PCR[PIN2NUM(uartPins[id][i])] = PORT_PCR_MUX(SPI_PORT_ALTERNATIVE) | PORT_PCR_DSE(1);
+    case SPI_SLAVE_0:
+      slavePin = SPI_SS_0;
+      break;
+    case SPI_SLAVE_1:
+      slavePin = SPI_SS_1;
+      break;
+    case SPI_SLAVE_2:
+      slavePin = SPI_SS_2;
+      break;
+    case SPI_SLAVE_3:
+      slavePin = SPI_SS_3;
+      break;
+    case SPI_SLAVE_4:
+      slavePin = SPI_SS_4;
+      break;
+    case SPI_SLAVE_5:
+      slavePin = SPI_SS_5;
+      break;
+    default:
+      break;
   }
+  portPointers[PIN2PORT(spiPins[id][slavePin])]->PCR[PIN2NUM(spiPins[id][slavePin])] = PORT_PCR_MUX(SPI_PORT_ALTERNATIVE);
+
 
   // Configuration of the MCR register
   spiPointers[id]->MCR = SPI_MCR_PCSIS(config.slaveSelectPolarity == SPI_SS_INACTIVE_HIGH ? 0x3F : 0x00);
@@ -248,9 +271,9 @@ void spiInit(spi_id_t id, spi_cfg_t config)
   spiInstances[id].txQueue = createQueue(spiInstances[id].txBuffer, TX_QUEUE_MAX_SIZE, sizeof(spi_package_t));
 }
 
-bool spiSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size_t len)
+bool spiSend(spi_id_t id, const uint16_t message[], size_t len)
 {
-  return smartSend(id, slave, message, len, false);
+  return smartSend(id, message, len, false);
 }
 
 bool spiCanSend(spi_id_t id, size_t len)
@@ -258,9 +281,9 @@ bool spiCanSend(spi_id_t id, size_t len)
   return emptySize(&(spiInstances[id].txQueue)) >= len; // checks for empty space in driver's tx queue
 }
 
-bool spiReceive(spi_id_t id, spi_slave_id_t slave, size_t len)
+bool spiReceive(spi_id_t id, size_t len)
 {
-  return smartSend(id, slave, NULL, len, true);
+  return smartSend(id, NULL, len, true);
 }
 
 bool spiRead(spi_id_t id, uint16_t readBuffer[], size_t len)
@@ -309,7 +332,7 @@ void spiOnTransferCompleted(spi_id_t id, spi_callback_t callback)
  *******************************************************************************
  ******************************************************************************/
 
-bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size_t len, bool sendTrash)
+bool smartSend(spi_id_t id, const uint16_t message[], size_t len, bool sendTrash)
 {
 
   // Return false if there's not enough space in the software queue.
@@ -329,7 +352,7 @@ bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size
     {
       // Creating package.
       spi_package_t newPackage = {
-    		  .slaves = slave,
+    		  .slaves = spiInstances[id].slave,
 			  .frame = message[i],
 			  .eoq = ( ((i % spiInstances[id].hwFifoSize) == (spiInstances[id].hwFifoSize - 1) && (i > 0)) || i == len-1)  ? 1 : 0
       };
