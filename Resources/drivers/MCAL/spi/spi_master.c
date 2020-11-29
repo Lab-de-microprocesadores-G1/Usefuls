@@ -74,7 +74,6 @@ typedef struct {
 
   // Configuration of SPI hardware
   spi_cfg_t         config;
-  spi_slave_id_t    slave;
   
   // Flags
   bool transferComplete;
@@ -114,13 +113,14 @@ static uint32_t computeBaudRate(uint8_t dbr, uint8_t br, uint8_t pbr);
  *        Adds the functionality that the message can be ignored and
  *        just send "trash".
  * @param id          SPI module id
+ * @param slave   		Slaves to be selected
  * @param message     Message to be sent
  * @param len         Message length
  * @param sendTrash   When true, message content is ignored and just the software queue
  *                    is incremented in len.If false, sends the message
  * @return Whether it could send or not
  */
-static bool smartSend(spi_id_t id, const uint16_t message[], size_t len, bool sendTrash);
+static bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size_t len, bool sendTrash);
 
 /**
  * @brief Transfers the first element in the software queue to the hardware FIFO.
@@ -199,6 +199,7 @@ static uint16_t spiScaler[] = {
                         GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+
 void spiInit(spi_id_t id, spi_slave_id_t slave, spi_cfg_t config)
 {
   // Clock gating of the SPI peripheral
@@ -214,32 +215,14 @@ void spiInit(spi_id_t id, spi_slave_id_t slave, spi_cfg_t config)
   SIM->SCGC5 |= SIM_SCGC5_PORTE(1);
 
   // Selecting the mux alternative for the port used
-  spiInstances[id].slave = slave;
-  uint8_t slavePin;
-  switch (slave)
+  for (uint8_t i = 0 ; i < SPI_PIN_COUNT ; i++)
   {
-    case SPI_SLAVE_0:
-      slavePin = SPI_SS_0;
-      break;
-    case SPI_SLAVE_1:
-      slavePin = SPI_SS_1;
-      break;
-    case SPI_SLAVE_2:
-      slavePin = SPI_SS_2;
-      break;
-    case SPI_SLAVE_3:
-      slavePin = SPI_SS_3;
-      break;
-    case SPI_SLAVE_4:
-      slavePin = SPI_SS_4;
-      break;
-    case SPI_SLAVE_5:
-      slavePin = SPI_SS_5;
-      break;
-    default:
-      break;
+	  bool enableSlave = (slave & (0b000001 << (i - SPI_SS_0) )) > 0;
+	  if (i == SPI_SIN || i == SPI_SOUT || i == SPI_SCLK || enableSlave)
+	  {
+		  portPointers[PIN2PORT(spiPins[id][i])]->PCR[PIN2NUM(spiPins[id][i])] = PORT_PCR_MUX(SPI_PORT_ALTERNATIVE);
+	  }
   }
-  portPointers[PIN2PORT(spiPins[id][slavePin])]->PCR[PIN2NUM(spiPins[id][slavePin])] = PORT_PCR_MUX(SPI_PORT_ALTERNATIVE);
 
   // Configuration of the MCR register
   spiPointers[id]->MCR = SPI_MCR_PCSIS(config.slaveSelectPolarity == SPI_SS_INACTIVE_HIGH ? 0x3F : 0x00);
@@ -269,9 +252,9 @@ void spiInit(spi_id_t id, spi_slave_id_t slave, spi_cfg_t config)
   spiInstances[id].txQueue = createQueue(spiInstances[id].txBuffer, TX_QUEUE_MAX_SIZE, sizeof(spi_package_t));
 }
 
-bool spiSend(spi_id_t id, const uint16_t message[], size_t len)
+bool spiSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size_t len)
 {
-  return smartSend(id, message, len, false);
+  return smartSend(id, slave, message, len, false);
 }
 
 bool spiCanSend(spi_id_t id, size_t len)
@@ -279,9 +262,9 @@ bool spiCanSend(spi_id_t id, size_t len)
   return emptySize(&(spiInstances[id].txQueue)) >= len; // checks for empty space in driver's tx queue
 }
 
-bool spiReceive(spi_id_t id, size_t len)
+bool spiReceive(spi_id_t id, spi_slave_id_t slave, size_t len)
 {
-  return smartSend(id, NULL, len, true);
+  return smartSend(id, slave, NULL, len, true);
 }
 
 bool spiRead(spi_id_t id, uint16_t readBuffer[], size_t len)
@@ -330,7 +313,7 @@ void spiOnTransferCompleted(spi_id_t id, spi_callback_t callback)
  *******************************************************************************
  ******************************************************************************/
 
-bool smartSend(spi_id_t id, const uint16_t message[], size_t len, bool sendTrash)
+bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size_t len, bool sendTrash)
 {
 
   // Return false if there's not enough space in the software queue.
@@ -350,7 +333,7 @@ bool smartSend(spi_id_t id, const uint16_t message[], size_t len, bool sendTrash
     {
       // Creating package.
       spi_package_t newPackage = {
-    		  .slaves = spiInstances[id].slave,
+    		  .slaves = slave,
 			  .frame = message[i],
 			  .eoq = ( ((i % spiInstances[id].hwFifoSize) == (spiInstances[id].hwFifoSize - 1) && (i > 0)) || i == len-1)  ? 1 : 0
       };
