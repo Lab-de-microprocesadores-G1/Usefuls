@@ -25,6 +25,16 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+// ¡IMPORTANT USE WARNING!
+// The FTM driver supports two operation modes, user may define which will be used, according
+// to whether the peripheral will be used in legacy mode or in advanced mode. This depends on
+// the FlexTimer Module functionalities required.
+// When advanced features are not used, it is recommended to use the legacy mode.
+// 		* FTM_DRIVER_LEGACY_MODE 			Selects the legacy mode
+// 		* FTM_DRIVER_ADVANCED_MODE			Selects the advanced mode
+#define FTM_DRIVER_LEGACY_MODE
+// #define FTM_DRIVER_ADVANCED_MODE
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -158,7 +168,7 @@ uint16_t ftmChannelGetCount(ftm_instance_t instance, ftm_channel_t channel);
  * @param instance		FTM Instance
  * @param channel		FTM Channel
  */
-uint16_t* ftmChannelCounter(ftm_instance_t instance, ftm_channel_t channel);
+volatile uint32_t* ftmChannelCounter(ftm_instance_t instance, ftm_channel_t channel);
 
 /*
  * @brief Registers action to be done on channel event. This event is either the match event
