@@ -207,6 +207,11 @@ uint16_t ftmChannelGetCount(ftm_instance_t instance, ftm_channel_t channel)
 	return ftmInstances[instance]->CONTROLS[channel].CnV;
 }
 
+uint16_t* ftmChannelCounter(ftm_instance_t instance, ftm_channel_t channel)
+{
+	return &(ftmInstances[instance]->CONTROLS[channel].CnV);
+}
+
 void ftmChannelSubscribe(ftm_instance_t instance, ftm_channel_t channel, void (*callback)(uint16_t))
 {
 	if (callback)
@@ -217,6 +222,12 @@ void ftmChannelSubscribe(ftm_instance_t instance, ftm_channel_t channel, void (*
 		// Registers the callback to be called when channel match occurs
 		ftmChannelCallbacks[instance][channel] = callback;
 	}
+}
+
+void ftmChannelEnableDMA(ftm_instance_t instance, ftm_channel_t channel)
+{
+	ftmInstances[instance]->CONTROLS[channel].CnSC = (ftmInstances[instance]->CONTROLS[channel].CnSC & ~FTM_CnSC_DMA_MASK) | FTM_CnSC_DMA(1);
+	ftmInstances[instance]->CONTROLS[channel].CnSC = (ftmInstances[instance]->CONTROLS[channel].CnSC & ~FTM_CnSC_CHIE_MASK) | FTM_CnSC_CHIE(1);
 }
 
 void ftmInputCaptureInit(ftm_instance_t instance, ftm_channel_t channel, ftm_ic_mode_t mode)

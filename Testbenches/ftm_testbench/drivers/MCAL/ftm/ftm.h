@@ -154,6 +154,13 @@ void ftmChannelSetCount(ftm_instance_t instance, ftm_channel_t channel, uint16_t
 uint16_t ftmChannelGetCount(ftm_instance_t instance, ftm_channel_t channel);
 
 /*
+ * @brief Returns the pointer to the current value of the channel counter.
+ * @param instance		FTM Instance
+ * @param channel		FTM Channel
+ */
+uint16_t* ftmChannelCounter(ftm_instance_t instance, ftm_channel_t channel);
+
+/*
  * @brief Registers action to be done on channel event. This event is either the match event
  * 		  when running as output (Output Compare, PWM), or the edge detection event when running
  * 		  as input (Input Capture). Registering a callback through this service automatically enables
@@ -163,6 +170,13 @@ uint16_t ftmChannelGetCount(ftm_instance_t instance, ftm_channel_t channel);
  * @param callback		Callback to be called on channel event
  */
 void ftmChannelSubscribe(ftm_instance_t instance, ftm_channel_t channel, void (*callback)(uint16_t));
+
+/*
+ * @brief Enables the channel requests to trigger DMA requests.
+ * @param instance		FTM Instance
+ * @param channel		FTM Channel
+ */
+void ftmChannelEnableDMA(ftm_instance_t instance, ftm_channel_t channel);
 
 /*************************************
 *                                    *
