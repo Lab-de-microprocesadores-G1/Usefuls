@@ -19,6 +19,21 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+// ¡IMPORTANT USE WARNING!
+// The led driver supports two operation modes, user may define which
+// will be used by applying the corresponding define.
+//
+// * LED_DRIVER_LIGHT_MODE only allows simple Set, Clear, Toggle and Status
+// control services, and disables all other complex functionalities
+// that use periodic interruption services. Use this mode when you don't need
+// blinking, burst, one shot functionalities and want to avoid having the led driver
+// PISR CPU load.
+// * LED_DRIVER_ADVANCED_MODE deploys complete functionalities of the led driver,
+// using the PISR.
+//
+// #define LED_DRIVER_LIGHT_MODE
+#define LED_DRIVER_ADVANCED_MODE
+
 #define LED_TICK_FREQUENCY	(1000U)					// Tick frequency for the timing of LED's
 #define LED_TICK_MS			1						// Equivalent amount of ticks of 1mS
 #define LED_MS2TICK(ms)		((ms) / LED_TICK_MS)	// Converts milliseconds to amount of ticks

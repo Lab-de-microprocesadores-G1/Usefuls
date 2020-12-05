@@ -8,7 +8,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "drivers/HAL/WS2812/WS2812.h"
+#include "../drivers/HAL/WS2812/WS2812.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
