@@ -17,6 +17,20 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+// ¡IMPORTANT USE WARNING!
+// The FTM driver supports two operation modes, user may define which will be used, according
+// to whether the peripheral will be used in legacy mode or in advanced mode. This depends on
+// the FlexTimer Module functionalities required.
+// When advanced features are not used, it is recommended to use the legacy mode.
+// 		* FTM_DRIVER_LEGACY_MODE 			Selects the legacy mode
+// 		* FTM_DRIVER_ADVANCED_MODE			Selects the advanced mode
+#define FTM_DRIVER_LEGACY_MODE
+// #define FTM_DRIVER_ADVANCED_MODE
+
+#if !defined(FTM_DRIVER_LEGACY_MODE) && !defined(FTM_DRIVER_ADVANCED_MODE)
+	#error	Need to define the operation mode of the driver.
+#endif
+
 #define CHANNEL_MASK(x)		(0x00000001 << (x))
 
 /*******************************************************************************
@@ -44,14 +58,14 @@ enum {
  ******************************************************************************/
 
 // FTM instances interruption service routines
-void 	FTM_IRQDispatch(ftm_instance_t instance);
+static void 	FTM_IRQDispatch(ftm_instance_t instance);
 __ISR__ FTM0_IRQHandler(void);
 __ISR__ FTM1_IRQHandler(void);
 __ISR__ FTM2_IRQHandler(void);
 __ISR__ FTM3_IRQHandler(void);
 
 // Configure PORT MUX 
-void setFtmChannelMux(ftm_instance_t instance, ftm_channel_t channel);
+static void setFtmChannelMux(ftm_instance_t instance, ftm_channel_t channel);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -79,7 +93,7 @@ static const pin_t		ftmChannelPins[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 // FTM Channel Pin MUX Alternatives
 static const uint8_t	ftmChannelAlts[FTM_INSTANCE_COUNT][FTM_CHANNEL_COUNT] = {
 	// Ch0 Ch1 Ch2 Ch3 Ch4 Ch5 Ch6 Ch7
-	{  4,  3,  3,  4,  4,  4,  4,  4  }, // FTM0
+	{  4,  3,  4,  4,  4,  4,  4,  4  }, // FTM0
 	{  3,  3,  0,  0,  0,  0,  0,  0  }, // FTM1
 	{  3,  3,  0,  0,  0,  0,  0,  0  }, // FTM2
 	{  4,  4,  4,  4,  3,  3,  3,  3  }  // FTM3
@@ -121,6 +135,13 @@ void ftmInit(ftm_instance_t instance, uint8_t prescaler, uint16_t module)
 			break;
 	}
 
+	// Port Clock Gating
+	SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK;
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
+	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
+	SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK;
+	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
+
 	// Enable Interrupts on NVIC
 	NVIC_EnableIRQ(ftmIrqs[instance]);
 
@@ -134,17 +155,29 @@ void ftmInit(ftm_instance_t instance, uint8_t prescaler, uint16_t module)
 	ftmInstances[instance]->MOD = module - 1;
 
 	// Enable advanced mode
-	ftmInstances[instance]->MODE |= FTM_MODE_FTMEN(1);
+#ifdef FTM_DRIVER_LEGACY_MODE
+	ftmInstances[instance]->MODE = (ftmInstances[instance]->MODE & ~FTM_MODE_FTMEN_MASK) | FTM_MODE_FTMEN(0);
+#endif
+#ifdef FTM_DRIVER_ADVANCED_MODE
+	ftmInstances[instance]->MODE = (ftmInstances[instance]->MODE & ~FTM_MODE_FTMEN_MASK) | FTM_MODE_FTMEN(1);
+#endif
 }
 
 void ftmStart(ftm_instance_t instance)
 {
-	ftmInstances[instance]->SC |= FTM_SC_CLKS(FTM_CLOCK_SYSTEM);
+	ftmInstances[instance]->SC = (ftmInstances[instance]->SC & ~FTM_SC_CLKS_MASK) | FTM_SC_CLKS(FTM_CLOCK_SYSTEM);
+}
+
+void ftmRestart(ftm_instance_t instance)
+{
+	ftmStop(instance);
+	ftmInstances[instance]->CNT = 0;
+	ftmStart(instance);
 }
 
 void ftmStop(ftm_instance_t instance)
 {
-	ftmInstances[instance]->SC &= (~FTM_SC_CLKS_MASK);
+	ftmInstances[instance]->SC = (ftmInstances[instance]->SC & ~FTM_SC_CLKS_MASK) | FTM_SC_CLKS(0);
 }
 
 uint16_t ftmGetCount(ftm_instance_t instance)
@@ -204,47 +237,60 @@ void ftmOutputCompareInit(ftm_instance_t instance, ftm_channel_t channel, ftm_oc
 	setFtmChannelMux(instance, channel);
 
 	// Sets the initial value of the output channel
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	uint32_t outputMask = CHANNEL_MASK(channel);
 	ftmInstances[instance]->OUTINIT = outInit ? (ftmInstances[instance]->OUTINIT | outputMask) : (ftmInstances[instance]->OUTINIT & (~outputMask));
+#endif
 }
 
 void ftmOutputCompareStart(ftm_instance_t instance, ftm_channel_t channel, uint16_t count)
 {
 	// Forces the output channel to its initial value registered during the initialization process
-	ftmInstances[instance]->MODE |= FTM_MODE_INIT(1);
+#ifdef FTM_DRIVER_ADVANCED_MODE
+	ftmInstances[instance]->MODE = (ftmInstances[instance]->MODE & ~FTM_MODE_INIT_MASK) | FTM_MODE_INIT(1);
+#endif
 
 	// Enables the matching process on the selected channel and updates the current count
 	ftmInstances[instance]->CONTROLS[channel].CnV = ftmInstances[instance]->CNT + count;
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	ftmInstances[instance]->PWMLOAD |= CHANNEL_MASK(channel);
 	ftmInstances[instance]->OUTMASK &= (~CHANNEL_MASK(channel));
+#endif
 }
 
 void ftmOutputCompareStop(ftm_instance_t instance, ftm_channel_t channel)
 {
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	// Disables the matching process on the PWMLOAD register
 	ftmInstances[instance]->PWMLOAD &= (~CHANNEL_MASK(channel));
 	ftmInstances[instance]->OUTMASK |= CHANNEL_MASK(channel);
+#endif
 }
 
 void ftmPwmInit(ftm_instance_t instance, ftm_channel_t channel, ftm_pwm_mode_t mode, ftm_pwm_alignment_t alignment, uint16_t duty, uint16_t period)
 {
 	// Configure up or up/down counter 
-	ftmInstances[instance]->SC |= FTM_SC_CPWMS(alignment == FTM_PWM_CENTER_ALIGNED ? 1 : 0);
+	ftmInstances[instance]->SC = (ftmInstances[instance]->SC & ~FTM_SC_CPWMS_MASK) | FTM_SC_CPWMS(alignment == FTM_PWM_CENTER_ALIGNED ? 1 : 0);
 
 	// Configure channel to PWM on the given mode and alignment
 	ftmInstances[instance]->CONTROLS[channel].CnSC = FTM_CnSC_MSB(1) | FTM_CnSC_ELSB(1) | FTM_CnSC_ELSA(mode == FTM_PWM_LOW_PULSES ? 1 : 0);
 	
 	// Enable changes on MOD, CNTIN and CnV
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	ftmInstances[instance]->PWMLOAD |= FTM_PWMLOAD_LDOK(1) | CHANNEL_MASK(channel);
+#endif
 
 	// Configure PWM period and duty
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	ftmInstances[instance]->CNTIN = 0;
+#endif
 	ftmInstances[instance]->MOD = period - 1;
 	ftmInstances[instance]->CONTROLS[channel].CnV = duty;
 	
 	// Pin MUX alternative
 	setFtmChannelMux(instance, channel);
 
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	// Enable Synchronization
 	ftmInstances[instance]->COMBINE |= (FTM_COMBINE_SYNCEN0_MASK << (8 * (channel / 2)));
 
@@ -253,12 +299,15 @@ void ftmPwmInit(ftm_instance_t instance, ftm_channel_t channel, ftm_pwm_mode_t m
 
 	// Sync when CNT == MOD - 1
 	ftmInstances[instance]->SYNC |= FTM_SYNC_CNTMAX_MASK;
+#endif
 }
 
 void ftmPwmSetDuty(ftm_instance_t instance, ftm_channel_t channel, uint16_t duty)
 {
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	// Software Trigger
 	ftmInstances[instance]->SYNC |= FTM_SYNC_SWSYNC_MASK;
+#endif
 
 	// Change Duty
 	ftmInstances[instance]->CONTROLS[channel].CnV = duty;
@@ -266,6 +315,7 @@ void ftmPwmSetDuty(ftm_instance_t instance, ftm_channel_t channel, uint16_t duty
 
 void ftmPwmSetEnable(ftm_instance_t instance, ftm_channel_t channel, bool running)
 {
+#ifdef FTM_DRIVER_ADVANCED_MODE
 	// Software Trigger
 	ftmInstances[instance]->SYNC |= FTM_SYNC_SWSYNC_MASK;
 
@@ -278,6 +328,7 @@ void ftmPwmSetEnable(ftm_instance_t instance, ftm_channel_t channel, bool runnin
 	{
 		ftmInstances[instance]->OUTMASK |= CHANNEL_MASK(channel);
 	}
+#endif
 }
 
 /*******************************************************************************
@@ -285,7 +336,7 @@ void ftmPwmSetEnable(ftm_instance_t instance, ftm_channel_t channel, bool runnin
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-void FTM_IRQDispatch(ftm_instance_t instance)
+static void FTM_IRQDispatch(ftm_instance_t instance)
 {
 	// Verify if the interruption occurred because of the overflow
 	// or because of a matching process in any of the timer channels
@@ -344,7 +395,7 @@ __ISR__ FTM3_IRQHandler(void)
 	FTM_IRQDispatch(FTM_INSTANCE_3);
 }
 
-void setFtmChannelMux(ftm_instance_t instance, ftm_channel_t channel)
+static void setFtmChannelMux(ftm_instance_t instance, ftm_channel_t channel)
 {
 	PORT_Type* 	ports[] = PORT_BASE_PTRS;
 	pin_t 		pin = ftmChannelPins[instance][channel];

@@ -29,6 +29,7 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// FlexTimer Channels
 typedef enum {
 	FTM_CHANNEL_0,
 	FTM_CHANNEL_1,
@@ -41,6 +42,7 @@ typedef enum {
 	FTM_CHANNEL_COUNT
 } ftm_channel_t;
 
+// FlexTimer Instances
 typedef enum {
 	FTM_INSTANCE_0,
 	FTM_INSTANCE_1,
@@ -102,6 +104,12 @@ void ftmInit(ftm_instance_t instance, uint8_t prescaler, uint16_t module);
  * @param instance		FTM Instance
  */
 void ftmStart(ftm_instance_t instance);
+
+/*
+ * @brief Restarts the FlexTimer module, enabling the clock and clearing the current counter value.
+ * @param instance		FTM instance
+ */
+void ftmRestart(ftm_instance_t instance);
 
 /*
  * @brief Stops running the FlexTimer module.
