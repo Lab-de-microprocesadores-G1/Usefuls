@@ -20,6 +20,11 @@
 
 #define DMA_CHANNEL   0
 
+#if !defined(FTM_DRIVER_LEGACY_MODE)
+	#error	Please, turn the FlexTimer driver to the legacy mode.
+#endif
+
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -51,9 +56,9 @@ typedef struct {
 
 // PWM-DMA Context data structura
 typedef struct {
-
   /* Status and control fields of the context */
   bool                      alreadyInitialized;
+  bool						isRunning;
   pwmdma_update_callback_t  updateCallback;
 
   /* Data Frames ping pong buffers and index */
@@ -104,27 +109,22 @@ static pwmdma_context_t context;
 
 void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm_channel_t ftmChannel)
 {
-  FTM_Type * ftmInstances[] = FTM_BASE_PTRS;
   if (!context.alreadyInitialized)
   {
     // Update the already initialized flag
     context.alreadyInitialized = true;
+    context.isRunning = false;
     
     // Save context variables.
     context.ftmInstance = ftmInstance;
     context.ftmChannel = ftmChannel;
 
-    // Initialize the ftm driver
+    // Initialize the FlexTimer module, the channel as PWM and enable the DMA to trigger the DMA request
+    // when the transfer is required to update the next value of the CnV.
+    // ¡Using the FlexTimer in legacy mode!
     ftmInit(ftmInstance, prescaler, 0xFFFF);
-    
-    // Configure FTM for PWM
     ftmPwmInit(ftmInstance, ftmChannel, FTM_PWM_HIGH_PULSES, FTM_PWM_EDGE_ALIGNED, 1, mod);
-    
-    // Enable FTM to trigger DMA requests
-	ftmInstances[context.ftmInstance]->CONTROLS[context.ftmChannel].CnSC |= FTM_CnSC_DMA(1) | FTM_CnSC_CHIE(1);
-  
-	// Legacy mode!!
-	ftmInstances[context.ftmInstance]->MODE = (ftmInstances[context.ftmInstance]->MODE & ~FTM_MODE_FTMEN_MASK) | FTM_MODE_FTMEN(0);
+    ftmChannelEnableDMA(ftmInstance, ftmChannel);
 
     // Clock Gating for eDMA and DMAMux
     SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
@@ -135,8 +135,6 @@ void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm
   
     // Enable DMAMUX for DMA_CHANNEL and select source
     DMAMUX->CHCFG[DMA_CHANNEL] = DMAMUX_CHCFG_ENBL(1) | DMAMUX_CHCFG_TRIG(0) | DMAMUX_CHCFG_SOURCE(pwmdmaFtm2DmaChannel(context.ftmInstance, context.ftmChannel));
-
-    ftmStart(context.ftmInstance);
   }
 }
 
@@ -145,66 +143,78 @@ void pwmdmaOnFrameUpdate(pwmdma_update_callback_t callback)
   context.updateCallback = callback;
 }
 
-void pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, size_t totalFrames, bool loop)
+bool pwmdmaAvailable(void)
 {
-  FTM_Type * ftmInstances[] = FTM_BASE_PTRS;
+	return !context.isRunning;
+}
 
-  // Save the configuration of the transfers
-  context.frames[0] = firstFrame;
-  context.frames[1] = secondFrame;
-  context.frameSize = frameSize;
-  context.totalFrames = totalFrames;
-  context.loop = loop;
-  context.framesCopied = 0;
-  context.currentFrame = 0;
+bool pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, size_t totalFrames, bool loop)
+{
+	bool success = false;
+	if (!context.isRunning)
+	{
+	  // Save the configuration of the transfers
+	  context.frames[0] = firstFrame;
+	  context.frames[1] = secondFrame;
+	  context.frameSize = frameSize;
+	  context.totalFrames = totalFrames;
+	  context.loop = loop;
+	  context.framesCopied = 0;
+	  context.currentFrame = 0;
+	  context.isRunning = true;
 
-  // Ask the user to update the content of the first two frames 
-  // used for transfering data with DMA controller
-  context.updateCallback(firstFrame, 0);
-  context.updateCallback(secondFrame, 1);
-  
-  // Configure DMA Software TCD fields common to both TCDs
-  // Destination address: FTM CnV for duty change
-  context.tcds[0].DADDR = (uint32_t)(&(ftmInstances[context.ftmInstance]->CONTROLS[context.ftmChannel].CnV));
+	  // Ask the user to update the content of the first two frames
+	  // used for transfering data with DMA controller
+	  context.updateCallback(firstFrame, 0);
+	  context.updateCallback(secondFrame, 1);
 
-  // Source and destination offsets
-  context.tcds[0].SOFF = sizeof(uint16_t);
-  context.tcds[0].DOFF = 0;
-  
-  // Source last sddress adjustment
-  context.tcds[0].SLAST = 0;
-  
-  // Set transfer size to 16bits (CnV size)
-  context.tcds[0].ATTR = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);
-  context.tcds[0].NBYTES_MLNO = (0x01) * (0x02);
-  
-  // Enable Interrupt on major loop end and Scatter Gather Operation
-  context.tcds[0].CSR = DMA_CSR_INTMAJOR(1) | DMA_CSR_ESG(1);
+	  // Configure DMA Software TCD fields common to both TCDs
+	  // Destination address: FTM CnV for duty change
+	  context.tcds[0].DADDR = (uint32_t)(ftmChannelCounter(context.ftmInstance, context.ftmChannel));
 
-  // Minor Loop Beginning Value
-  context.tcds[0].BITER_ELINKNO = frameSize;
-  // Minor Loop Current Value must be set to the beginning value the first time
-  context.tcds[0].CITER_ELINKNO = frameSize;
+	  // Source and destination offsets
+	  context.tcds[0].SOFF = sizeof(uint16_t);
+	  context.tcds[0].DOFF = 0;
 
-  // Copy common content from TCD0 to TCD1
-  context.tcds[1] = context.tcds[0];
+	  // Source last sddress adjustment
+	  context.tcds[0].SLAST = -frameSize * sizeof(uint16_t);
 
-  // Set source addresses for DMAs' TCD
-  context.tcds[0].SADDR = (uint32_t)(firstFrame);
-  context.tcds[1].SADDR = (uint32_t)(secondFrame);
+	  // Set transfer size to 16bits (CnV size)
+	  context.tcds[0].ATTR = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);
+	  context.tcds[0].NBYTES_MLNO = (0x01) * (0x02);
 
-  // Set Scatter Gather register of each TCD pointing to each other.
-  context.tcds[0].DLAST_SGA = (uint32_t) &(context.tcds[1]);
-  context.tcds[1].DLAST_SGA = (uint32_t) &(context.tcds[0]);
-  
-  // Enable the DMA channel for requests
-  DMA0->ERQ |= (0x0001 << DMA_CHANNEL);
-  
-  // Copy first software TCDn to actual DMA TCD 
-  memcpy(&(DMA0->TCD[DMA_CHANNEL]), &(context.tcds[0]), sizeof(pwmdma_TCD_t));
+	  // Enable Interrupt on major loop end and Scatter Gather Operation
+	  context.tcds[0].CSR = DMA_CSR_INTMAJOR(1) | DMA_CSR_ESG(1);
 
-  // Starts the ftm driver
-  ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, true);
+	  // Minor Loop Beginning Value
+	  context.tcds[0].BITER_ELINKNO = frameSize;
+	  // Minor Loop Current Value must be set to the beginning value the first time
+	  context.tcds[0].CITER_ELINKNO = frameSize;
+
+	  // Copy common content from TCD0 to TCD1
+	  context.tcds[1] = context.tcds[0];
+
+	  // Set source addresses for DMAs' TCD
+	  context.tcds[0].SADDR = (uint32_t)(firstFrame);
+	  context.tcds[1].SADDR = (uint32_t)(secondFrame);
+
+	  // Set Scatter Gather register of each TCD pointing to each other.
+	  context.tcds[0].DLAST_SGA = (uint32_t) &(context.tcds[1]);
+	  context.tcds[1].DLAST_SGA = (uint32_t) &(context.tcds[0]);
+
+	  // Enable the DMA channel for requests
+	  DMA0->ERQ |= (0x0001 << DMA_CHANNEL);
+
+	  // Copy first software TCDn to actual DMA TCD
+	  memcpy(&(DMA0->TCD[DMA_CHANNEL]), &(context.tcds[0]), sizeof(pwmdma_TCD_t));
+
+	  // Starts the ftm driver
+	  ftmRestart(context.ftmInstance);
+	  ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, true);
+	  success = true;
+	}
+
+	return success;
 }
 
 /*******************************************************************************
@@ -244,12 +254,15 @@ __ISR__ DMA0_IRQHandler(void)
       }
       else if (context.framesCopied == (context.totalFrames - 1) )
       {
-		  // Disable Scatter and Gather operation to prevent one extra request
-    	  context.tcds[!context.currentFrame].CSR = ( context.tcds[!context.currentFrame].CSR & ~DMA_CSR_ESG_MASK ) | DMA_CSR_ESG(0);
+		// Disable Scatter and Gather operation to prevent one extra request
+    	context.tcds[!context.currentFrame].CSR = ( context.tcds[!context.currentFrame].CSR & ~DMA_CSR_ESG_MASK ) | DMA_CSR_ESG(0);
+        context.tcds[!context.currentFrame].DLAST_SGA = 0;
       }
       else if (context.framesCopied == context.totalFrames)
       {
         ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, false);
+        ftmStop(context.ftmInstance);
+        context.isRunning = false;
       }
     } 
   }

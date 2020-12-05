@@ -56,9 +56,9 @@ typedef struct {
 
 // PWM-DMA Context data structura
 typedef struct {
-
   /* Status and control fields of the context */
   bool                      alreadyInitialized;
+  bool						isRunning;
   pwmdma_update_callback_t  updateCallback;
 
   /* Data Frames ping pong buffers and index */
@@ -113,6 +113,7 @@ void pwmdmaInit(uint8_t prescaler, uint16_t mod, ftm_instance_t ftmInstance, ftm
   {
     // Update the already initialized flag
     context.alreadyInitialized = true;
+    context.isRunning = false;
     
     // Save context variables.
     context.ftmInstance = ftmInstance;
@@ -142,65 +143,78 @@ void pwmdmaOnFrameUpdate(pwmdma_update_callback_t callback)
   context.updateCallback = callback;
 }
 
-void pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, size_t totalFrames, bool loop)
+bool pwmdmaAvailable(void)
 {
-  // Save the configuration of the transfers
-  context.frames[0] = firstFrame;
-  context.frames[1] = secondFrame;
-  context.frameSize = frameSize;
-  context.totalFrames = totalFrames;
-  context.loop = loop;
-  context.framesCopied = 0;
-  context.currentFrame = 0;
+	return !context.isRunning;
+}
 
-  // Ask the user to update the content of the first two frames 
-  // used for transfering data with DMA controller
-  context.updateCallback(firstFrame, 0);
-  context.updateCallback(secondFrame, 1);
-  
-  // Configure DMA Software TCD fields common to both TCDs
-  // Destination address: FTM CnV for duty change
-  context.tcds[0].DADDR = (uint32_t)(ftmChannelCounter(context.ftmInstance, context.ftmChannel));
+bool pwmdmaStart(uint16_t* firstFrame, uint16_t* secondFrame, size_t frameSize, size_t totalFrames, bool loop)
+{
+	bool success = false;
+	if (!context.isRunning)
+	{
+	  // Save the configuration of the transfers
+	  context.frames[0] = firstFrame;
+	  context.frames[1] = secondFrame;
+	  context.frameSize = frameSize;
+	  context.totalFrames = totalFrames;
+	  context.loop = loop;
+	  context.framesCopied = 0;
+	  context.currentFrame = 0;
+	  context.isRunning = true;
 
-  // Source and destination offsets
-  context.tcds[0].SOFF = sizeof(uint16_t);
-  context.tcds[0].DOFF = 0;
-  
-  // Source last sddress adjustment
-  context.tcds[0].SLAST = -frameSize * sizeof(uint16_t);
-  
-  // Set transfer size to 16bits (CnV size)
-  context.tcds[0].ATTR = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);
-  context.tcds[0].NBYTES_MLNO = (0x01) * (0x02);
-  
-  // Enable Interrupt on major loop end and Scatter Gather Operation
-  context.tcds[0].CSR = DMA_CSR_INTMAJOR(1) | DMA_CSR_ESG(1);
+	  // Ask the user to update the content of the first two frames
+	  // used for transfering data with DMA controller
+	  context.updateCallback(firstFrame, 0);
+	  context.updateCallback(secondFrame, 1);
 
-  // Minor Loop Beginning Value
-  context.tcds[0].BITER_ELINKNO = frameSize;
-  // Minor Loop Current Value must be set to the beginning value the first time
-  context.tcds[0].CITER_ELINKNO = frameSize;
+	  // Configure DMA Software TCD fields common to both TCDs
+	  // Destination address: FTM CnV for duty change
+	  context.tcds[0].DADDR = (uint32_t)(ftmChannelCounter(context.ftmInstance, context.ftmChannel));
 
-  // Copy common content from TCD0 to TCD1
-  context.tcds[1] = context.tcds[0];
+	  // Source and destination offsets
+	  context.tcds[0].SOFF = sizeof(uint16_t);
+	  context.tcds[0].DOFF = 0;
 
-  // Set source addresses for DMAs' TCD
-  context.tcds[0].SADDR = (uint32_t)(firstFrame);
-  context.tcds[1].SADDR = (uint32_t)(secondFrame);
+	  // Source last sddress adjustment
+	  context.tcds[0].SLAST = -frameSize * sizeof(uint16_t);
 
-  // Set Scatter Gather register of each TCD pointing to each other.
-  context.tcds[0].DLAST_SGA = (uint32_t) &(context.tcds[1]);
-  context.tcds[1].DLAST_SGA = (uint32_t) &(context.tcds[0]);
-  
-  // Enable the DMA channel for requests
-  DMA0->ERQ |= (0x0001 << DMA_CHANNEL);
-  
-  // Copy first software TCDn to actual DMA TCD 
-  memcpy(&(DMA0->TCD[DMA_CHANNEL]), &(context.tcds[0]), sizeof(pwmdma_TCD_t));
+	  // Set transfer size to 16bits (CnV size)
+	  context.tcds[0].ATTR = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);
+	  context.tcds[0].NBYTES_MLNO = (0x01) * (0x02);
 
-  // Starts the ftm driver
-  ftmRestart(context.ftmInstance);
-  ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, true);
+	  // Enable Interrupt on major loop end and Scatter Gather Operation
+	  context.tcds[0].CSR = DMA_CSR_INTMAJOR(1) | DMA_CSR_ESG(1);
+
+	  // Minor Loop Beginning Value
+	  context.tcds[0].BITER_ELINKNO = frameSize;
+	  // Minor Loop Current Value must be set to the beginning value the first time
+	  context.tcds[0].CITER_ELINKNO = frameSize;
+
+	  // Copy common content from TCD0 to TCD1
+	  context.tcds[1] = context.tcds[0];
+
+	  // Set source addresses for DMAs' TCD
+	  context.tcds[0].SADDR = (uint32_t)(firstFrame);
+	  context.tcds[1].SADDR = (uint32_t)(secondFrame);
+
+	  // Set Scatter Gather register of each TCD pointing to each other.
+	  context.tcds[0].DLAST_SGA = (uint32_t) &(context.tcds[1]);
+	  context.tcds[1].DLAST_SGA = (uint32_t) &(context.tcds[0]);
+
+	  // Enable the DMA channel for requests
+	  DMA0->ERQ |= (0x0001 << DMA_CHANNEL);
+
+	  // Copy first software TCDn to actual DMA TCD
+	  memcpy(&(DMA0->TCD[DMA_CHANNEL]), &(context.tcds[0]), sizeof(pwmdma_TCD_t));
+
+	  // Starts the ftm driver
+	  ftmRestart(context.ftmInstance);
+	  ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, true);
+	  success = true;
+	}
+
+	return success;
 }
 
 /*******************************************************************************
@@ -248,6 +262,7 @@ __ISR__ DMA0_IRQHandler(void)
       {
         ftmPwmSetEnable(context.ftmInstance, context.ftmChannel, false);
         ftmStop(context.ftmInstance);
+        context.isRunning = false;
       }
     } 
   }
