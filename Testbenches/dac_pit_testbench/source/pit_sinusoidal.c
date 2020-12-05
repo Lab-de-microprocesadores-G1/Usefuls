@@ -101,10 +101,10 @@ void pitInit()
 	PIT->CHANNEL[0].LDVAL = 1133;
 
 	// Enable interrupts
-	NVIC_EnableIRQ(PIT0_IRQn);
+	// NVIC_EnableIRQ(PIT0_IRQn);
 
 	// Enable timer and interrupts
-	PIT->CHANNEL[0].TCTRL = PIT_TCTRL_TEN(1) | PIT_TCTRL_TIE(1);
+	PIT->CHANNEL[0].TCTRL = PIT_TCTRL_TEN(1) | PIT_TCTRL_TIE(0);
 }
 
 __ISR__  PIT_IRQHandler(void)
