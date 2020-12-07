@@ -73,7 +73,7 @@ typedef struct {
   queue_t           rxQueue;                      // Queue instance for rx
 
   // Configuration of SPI hardware
-  spi_cfg_t   config;
+  spi_cfg_t         config;
   
   // Flags
   bool transferComplete;
@@ -113,7 +113,7 @@ static uint32_t computeBaudRate(uint8_t dbr, uint8_t br, uint8_t pbr);
  *        Adds the functionality that the message can be ignored and
  *        just send "trash".
  * @param id          SPI module id
- * @param slave       The id of the slave to send the data
+ * @param slave   		Slaves to be selected
  * @param message     Message to be sent
  * @param len         Message length
  * @param sendTrash   When true, message content is ignored and just the software queue
@@ -150,7 +150,7 @@ static void     SPI_RFDFDispatcher(spi_id_t id);
 
 static PORT_Type*     portPointers[]  = PORT_BASE_PTRS;
 static SPI_Type*      spiPointers[]   = SPI_BASE_PTRS;
-static const pin_t    uartPins[SPI_INSTANCE_AMOUNT][SPI_PIN_COUNT] = {
+static const pin_t    spiPins[SPI_INSTANCE_AMOUNT][SPI_PIN_COUNT] = {
 //  SOUT                SIN                 SCLK                SS0                SS1                SS2                SS3                SS4                SS5
   { PORTNUM2PIN(PD, 2), PORTNUM2PIN(PD, 3), PORTNUM2PIN(PD, 1), PORTNUM2PIN(PD, 0),PORTNUM2PIN(PC, 3),PORTNUM2PIN(PC, 2),PORTNUM2PIN(PC, 1),PORTNUM2PIN(PC, 0),PORTNUM2PIN(PB, 23)}, // SPI0
   { PORTNUM2PIN(PB, 16),PORTNUM2PIN(PB, 17),PORTNUM2PIN(PB, 2), PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3),PORTNUM2PIN(PB, 3)}, // SPI1
@@ -193,8 +193,6 @@ static uint16_t spiScaler[] = {
   32768
 };
 
-int huevo = 0;
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -202,7 +200,7 @@ int huevo = 0;
  *******************************************************************************
  ******************************************************************************/
 
-void spiInit(spi_id_t id, spi_cfg_t config)
+void spiInit(spi_id_t id, spi_slave_id_t slave, spi_cfg_t config)
 {
   // Clock gating of the SPI peripheral
   SIM->SCGC6 |= SIM_SCGC6_SPI0(1);
@@ -219,7 +217,11 @@ void spiInit(spi_id_t id, spi_cfg_t config)
   // Selecting the mux alternative for the port used
   for (uint8_t i = 0 ; i < SPI_PIN_COUNT ; i++)
   {
-    portPointers[PIN2PORT(uartPins[id][i])]->PCR[PIN2NUM(uartPins[id][i])] = PORT_PCR_MUX(SPI_PORT_ALTERNATIVE) | PORT_PCR_DSE(1);
+	  bool enableSlave = (slave & (0b000001 << (i - SPI_SS_0) )) > 0;
+	  if (i == SPI_SIN || i == SPI_SOUT || i == SPI_SCLK || enableSlave)
+	  {
+		  portPointers[PIN2PORT(spiPins[id][i])]->PCR[PIN2NUM(spiPins[id][i])] = PORT_PCR_MUX(SPI_PORT_ALTERNATIVE);
+	  }
   }
 
   // Configuration of the MCR register
@@ -313,7 +315,6 @@ void spiOnTransferCompleted(spi_id_t id, spi_callback_t callback)
 
 bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size_t len, bool sendTrash)
 {
-
   // Return false if there's not enough space in the software queue.
   if (!spiCanSend(id, len))
   {
@@ -340,34 +341,25 @@ bool smartSend(spi_id_t id, spi_slave_id_t slave, const uint16_t message[], size
     }
   }
 
-  if (huevo == 4)
-  {
-	  uint32_t caca = spiPointers[id]->SR;
-	  huevo = 4;
-  }
-
   // If the transmission is not currently active (TXRXS is set), the firsts elements in the software queue
   // should be sent to the hardware FIFO to start the transmission.
-  if ( (spiPointers[id]->SR & SPI_SR_TXRXS_MASK ) != SPI_SR_TXRXS_MASK)
+  if ( (spiPointers[id]->SR & SPI_SR_TXRXS_MASK ) != SPI_SR_TXRXS_MASK )
   {
-	  huevo++;
     softQueue2HardFIFO(id);
     spiPointers[id]->MCR = (spiPointers[id]->MCR & ~SPI_MCR_HALT_MASK) | SPI_MCR_HALT(0);
   }
-
   return true;
 }
 
 void softQueue2HardFIFO(spi_id_t id)
 {
-
   while ((spiPointers[id]->SR & SPI_SR_TFFF_MASK) && !isEmpty(&(spiInstances[id].txQueue)))
   {
     // Getting package in software queue.
     spi_package_t* package = (spi_package_t*)pop(&(spiInstances[id].txQueue));
     
     // Writing message to hardware TX FIFO.
-    spiPointers[id]->PUSHR = SPI_PUSHR_CONT(1) | SPI_PUSHR_CTAS(0b000) | SPI_PUSHR_EOQ(package->eoq) | 
+    spiPointers[id]->PUSHR = SPI_PUSHR_CONT(spiInstances[id].config.continuousPcs) | SPI_PUSHR_CTAS(0b000) | SPI_PUSHR_EOQ(package->eoq) | 
                              SPI_PUSHR_CTCNT(1) | SPI_PUSHR_PCS(package->slaves) | SPI_PUSHR_TXDATA(package->frame);
 
     // Clear the flag just in case
@@ -438,7 +430,7 @@ static void SPI_IRQDispatcher(spi_id_t id)
   // If last package was sent
   if (sr & SPI_SR_EOQF_MASK)
   {
-    // Clear flag
+	// Clear flag
     spiPointers[id]->SR = SPI_SR_EOQF_MASK;
     // Do what needs to be done
     SPI_EOQFDispatcher(id);

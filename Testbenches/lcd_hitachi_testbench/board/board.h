@@ -31,10 +31,6 @@
 #define SW2_ACTIVE		LOW
 #define SW3_ACTIVE		LOW
 
-#define	PIN_LCD_E		  PORTNUM2PIN(PC, 3)	// PTC3
-#define PIN_LCD_RW		PORTNUM2PIN(PC, 2)	// PTC2
-#define PIN_LCD_RS		PORTNUM2PIN(PA, 2)	// PTA2
-
 // Active Status
 #define LED_ACTIVE      LOW
     
