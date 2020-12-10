@@ -8,20 +8,25 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "drivers/HAL/timer/timer.h"
-#include "drivers/HAL/HD44780/HD44780.h"
+
+#include "drivers/HAL/HD44780_LCD/HD44780_LCD.h"
+#include "drivers/HAL/button/button.h"
+#include <string.h>
+#include <stdint.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define UPDATE_PERIOD		300
+#define ROTATION_PERIOD_LINE1	300
+#define ROTATION_PERIOD_LINE2	500
+
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static void displayCounter(void);
+static void onSWPressed(void);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -30,11 +35,6 @@ static void displayCounter(void);
 /*******************************************************************************
  * PRIVATE VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
-
-static tim_id_t idTimer;
-static bool showingMessage = false;
-
-static const char * message = "Boca la concha de tu madre";
 
 /*******************************************************************************
  *******************************************************************************
@@ -45,56 +45,34 @@ static const char * message = "Boca la concha de tu madre";
 /* Called once at the beginning of the program */
 void appInit (void)
 {
-	// LCD configurations
-	hd44780_cfg_t config  = {
-			.inc = HD44780_INC_CURSOR,
-			.bothLines = HD44780_BOTH_LINES,
-			.shift = HD44780_NO_SHIFT,
-			.blink = HD44780_DO_BLINK,
-			.cursor = HD44780_SHOW_CURSOR
-	};
-	HD44780Init(config);
+	// Initialize the LCD driver
+	HD44780LcdInit();
 
-	// Initialization of the timer driver
-	timerInit();
-	idTimer = timerGetId();
+	// Initialize button driver and subscribe to PRESS event
+	buttonInit();
+	buttonSubscribe(BUTTON_1, BUTTON_PRESS, onSWPressed);
 }
 
 /* Called repeatedly in an infinite loop */
 void appRun (void)
 {
-	if (!showingMessage && HD44780InitReady())
-	{
-		timerStart(idTimer, TIMER_MS2TICKS(UPDATE_PERIOD), TIM_MODE_PERIODIC, displayCounter);
-		showingMessage = true;
-	}
-}
-
-void displayCounter(void)
-{
-	static uint8_t index = 0;
-	static bool changed = false;
-	if (index < strlen(message))
-	{
-		if ((index == 15) && !changed)
-		{
-			// Start shifting
-			HD44780WriteInstruction(HD44780_ENTRY_MODE_SET(1, 1));
-			changed = true;
-		}
-		else
-		{
-			HD44780WriteData(message[index++]);
-		}
-	}
 
 }
+
+
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
+void onSWPressed(void)
+{
+	const char * messages[2] = { "Pizza conmigo - Alfredo Casero - Casaeirus", "            3:31" };
+
+	HD44780WriteRotatingString(0, messages[0], strlen(messages[0]), ROTATION_PERIOD_LINE1);
+	HD44780WriteRotatingString(1, messages[1], strlen(messages[1]), ROTATION_PERIOD_LINE2);
+}
 
 /*******************************************************************************
  ******************************************************************************/

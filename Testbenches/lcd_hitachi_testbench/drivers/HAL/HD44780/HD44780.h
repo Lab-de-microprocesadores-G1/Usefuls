@@ -102,13 +102,13 @@ void HD44780Init(hd44780_cfg_t config);
 bool HD44780InitReady(void);
 
 /**
- * @brief Writes to the LCD IR
+ * @brief Writes to the LCD IR. Asynchronous, can take up to 200us.
  * @param instruction 	HD44780 instruction
  */
 void HD44780WriteInstruction(uint8_t instruction);
 
 /**
- * @brief Writes to the LCD DR
+ * @brief Writes to the LCD DR. Asynchronous, can take up to 200us.
  * @param data		Byte to be written
  */
 void HD44780WriteData(uint8_t data);
