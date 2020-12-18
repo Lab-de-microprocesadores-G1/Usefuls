@@ -29,6 +29,7 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// FlexTimer Channels
 typedef enum {
 	FTM_CHANNEL_0,
 	FTM_CHANNEL_1,
@@ -41,6 +42,7 @@ typedef enum {
 	FTM_CHANNEL_COUNT
 } ftm_channel_t;
 
+// FlexTimer Instances
 typedef enum {
 	FTM_INSTANCE_0,
 	FTM_INSTANCE_1,
@@ -104,6 +106,12 @@ void ftmInit(ftm_instance_t instance, uint8_t prescaler, uint16_t module);
 void ftmStart(ftm_instance_t instance);
 
 /*
+ * @brief Restarts the FlexTimer module, enabling the clock and clearing the current counter value.
+ * @param instance		FTM instance
+ */
+void ftmRestart(ftm_instance_t instance);
+
+/*
  * @brief Stops running the FlexTimer module.
  * @param instance		FTM Instance
  */
@@ -146,6 +154,13 @@ void ftmChannelSetCount(ftm_instance_t instance, ftm_channel_t channel, uint16_t
 uint16_t ftmChannelGetCount(ftm_instance_t instance, ftm_channel_t channel);
 
 /*
+ * @brief Returns the pointer to the current value of the channel counter.
+ * @param instance		FTM Instance
+ * @param channel		FTM Channel
+ */
+uint16_t* ftmChannelCounter(ftm_instance_t instance, ftm_channel_t channel);
+
+/*
  * @brief Registers action to be done on channel event. This event is either the match event
  * 		  when running as output (Output Compare, PWM), or the edge detection event when running
  * 		  as input (Input Capture). Registering a callback through this service automatically enables
@@ -155,6 +170,13 @@ uint16_t ftmChannelGetCount(ftm_instance_t instance, ftm_channel_t channel);
  * @param callback		Callback to be called on channel event
  */
 void ftmChannelSubscribe(ftm_instance_t instance, ftm_channel_t channel, void (*callback)(uint16_t));
+
+/*
+ * @brief Enables the channel requests to trigger DMA requests.
+ * @param instance		FTM Instance
+ * @param channel		FTM Channel
+ */
+void ftmChannelEnableDMA(ftm_instance_t instance, ftm_channel_t channel);
 
 /*************************************
 *                                    *
