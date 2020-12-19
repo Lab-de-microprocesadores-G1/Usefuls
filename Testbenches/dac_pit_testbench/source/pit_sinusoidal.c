@@ -20,8 +20,13 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define BUFFER_SIZE 2000
-#define PI 			3.14159265
+#define SIGNAL_FREQ		1000
+#define PI 				3.14159265
+#define SAMPLE_RATE 	44100
+#define PIT_CLOCK		50e6
+#define BUFFER_SIZE 	(SAMPLE_RATE / SIGNAL_FREQ)
+
+#define DAC_PEAK_VALUE	4096
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -30,7 +35,7 @@
 static void onTimeout(void);
 static void pitInit();
 static __ISR__  PIT_IRQHandler(void);
-
+static uint16_t adjustSample(double sample, uint32_t peakValue, bool bipolar);
 
 /*******************************************************************************
  * VARIABLES TYPES DEFINITIONS
@@ -61,7 +66,7 @@ void appInit (void)
 	for (uint32_t i = 0 ; i < BUFFER_SIZE ; i++)
 	{
 		double aux = 2 * PI * i / BUFFER_SIZE;
-		buffer[i] = ( sin(aux) * (4096/2) ) + 2047;
+		buffer[i] = adjustSample(sin(aux), 1, true);
 	}
 
 	// Initialize PIT for periodic interrupts
@@ -98,7 +103,7 @@ void pitInit()
 	PIT->MCR = PIT_MCR_MDIS(0);
 
 	// Configure desired sample rate
-	PIT->CHANNEL[0].LDVAL = 1133;
+	PIT->CHANNEL[0].LDVAL = (int)(PIT_CLOCK / (double)SAMPLE_RATE);
 
 	// Enable interrupts
 	// NVIC_EnableIRQ(PIT0_IRQn);
@@ -113,6 +118,23 @@ __ISR__  PIT_IRQHandler(void)
 	PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;
 
 	onTimeout();
+}
+
+uint16_t adjustSample(double sample, uint32_t peakValue, bool bipolar)
+{
+	double result;
+
+	// Scale to DAC range
+	result = (sample * DAC_PEAK_VALUE) / peakValue;
+
+	// If bipolar, peak2peak voltage is 2 * peakValue, divide by 2
+	if (bipolar)
+	{
+		result /= 2;
+	}
+
+	// Adjust offset to go from 0 DAC_PEAK
+	return	(uint16_t)(result + DAC_PEAK_VALUE / 2 - 1);
 }
 
 /*******************************************************************************
